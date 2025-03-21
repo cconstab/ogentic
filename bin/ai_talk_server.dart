@@ -153,7 +153,6 @@ Future<void> atTalk(List<String> args) async {
   // Current atClient is the one which the onboardingService just authenticated
   AtClient atClient = AtClientManager.getInstance().atClient;
 
-
   atClient.notificationService.subscribe(regex: 'attalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {
     String keyAtsign = notification.key;
@@ -162,19 +161,19 @@ Future<void> atTalk(List<String> args) async {
     if (keyAtsign == 'attalk') {
       logger.info('atTalk update received from ${notification.from} notification id : ${notification.id}');
       var talk = notification.value!;
-  //print('Getting firstname \n');
-    var namekey = AtKey()
-    ..key = "firstname.attalk"
-    ..sharedBy = notification.from
-    ..sharedWith = toAtsign
-    ..namespace = nameSpace
-    ..metadata = metaData;
-  
-  var nameAtkey = await atClient.get(namekey);
-    firstname = nameAtkey.value;
-    firstname = firstname.split(" ").elementAt(0);
-    //print('got the firstname $firstname');
+      //print('Getting firstname \n');
+      var namekey = AtKey()
+        ..key = "firstname.attalk"
+        ..sharedBy = notification.from
+        ..sharedWith = toAtsign
+        ..namespace = nameSpace
+        ..metadata = metaData;
 
+      var nameAtkey = await atClient.get(namekey);
+      firstname = nameAtkey.value;
+      firstname = firstname.split(" ").elementAt(0);
+      if (firstname.isEmpty) firstname = notification.from;
+      //print('got the firstname $firstname');
 
       var key = AtKey()
         ..key = 'attalk'
