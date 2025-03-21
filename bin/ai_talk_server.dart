@@ -116,7 +116,7 @@ Future<void> atTalk(List<String> args) async {
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.$nameSpace/$fromAtsign/storage/commitLog'
     ..rootDomain = rootDomain
-    ..fetchOfflineNotifications = true
+    ..fetchOfflineNotifications = false
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
 
@@ -152,6 +152,7 @@ Future<void> atTalk(List<String> args) async {
 
   // Current atClient is the one which the onboardingService just authenticated
   AtClient atClient = AtClientManager.getInstance().atClient;
+ 
 
   atClient.notificationService.subscribe(regex: 'attalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {

@@ -121,7 +121,7 @@ Future<void> atTalk(List<String> args) async {
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.$nameSpace/$fromAtsign/storage/commitLog'
     ..rootDomain = rootDomain
-    ..fetchOfflineNotifications = true
+    ..fetchOfflineNotifications = false
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
 
