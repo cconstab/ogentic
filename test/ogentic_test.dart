@@ -2,7 +2,7 @@ import 'package:ogentic/ogentic.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('calculate', () {
-    expect(calculate(), 42);
+  test('calculate', () async {
+    expect(await questionLlamma('say yes','Colin'), 'Yes, Colin.');
   });
 }
