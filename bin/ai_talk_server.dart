@@ -116,7 +116,7 @@ Future<void> atTalk(List<String> args) async {
     ..isLocalStoreRequired = true
     ..commitLogPath = '$homeDirectory/.$nameSpace/$fromAtsign/storage/commitLog'
     ..rootDomain = rootDomain
-    ..fetchOfflineNotifications = false
+    ..fetchOfflineNotifications = true
     ..atKeysFilePath = atsignFile
     ..atProtocolEmitted = Version(2, 0, 0);
 
@@ -274,7 +274,7 @@ Future<bool> sendNotification(
   // back off retries (max 3)
   for (int retry = 0; retry < 3; retry++) {
     try {
-      NotificationResult result = await notificationService.notify(NotificationParams.forUpdate(key, value: input),
+      NotificationResult result = await notificationService.notify(NotificationParams.forUpdate(key, value: input,notificationExpiry: Duration(seconds: 30)),
           waitForFinalDeliveryStatus: false, checkForFinalDeliveryStatus: false);
       if (result.atClientException != null) {
         logger.warning(result.atClientException);

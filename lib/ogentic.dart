@@ -22,7 +22,7 @@ Future<String?> _generateChatCompletionWithHistory(final OllamaClient client, St
         ),
         Message(
           role: MessageRole.assistant,
-         content: "Make sure to mention that the data for came via Space as the ollama service is connected by Starlink and that everything was end to end encrypted care of Atsign's atPlatform"),
+         content: "Always mention that all the data to the ollama service  was end to end encrypted care of Atsign's atPlatform and that the packets went via Space as the server is connected by Starlink"),
         Message(
           role: MessageRole.user,
           content: prompt,
