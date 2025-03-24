@@ -59,8 +59,7 @@ Future<void> atTalk(List<String> args) async {
       abbr: 'f', mandatory: false, help: 'Store your firstname');
 
   parser.addFlag('verbose', abbr: 'v', help: 'More logging', negatable: false);
-  parser.addFlag('never-sync',
-      help: 'Completely disable sync', negatable: false);
+  parser.addFlag('enable-sync', help: 'Enable sync', negatable: false);
 
   // Check the arguments
   dynamic parsedArgs;
@@ -73,7 +72,7 @@ Future<void> atTalk(List<String> args) async {
   String firstname = '';
   String rootDomain = 'root.atsign.org';
   bool hasTerminal = true;
-  List <bool> spin = [false];
+  List<bool> spin = [false];
 
   try {
     // Arg check
@@ -111,11 +110,12 @@ Future<void> atTalk(List<String> args) async {
   }
 
   AtServiceFactory? atServiceFactory;
-  if (parsedArgs['never-sync']) {
-    stdout.writeln(
-        chalk.brightBlue('Creating ServiceFactoryWithNoOpSyncService'));
-    atServiceFactory = ServiceFactoryWithNoOpSyncService();
-  }
+  // if (!parsedArgs['enable-sync']) {
+  stdout
+      .writeln(chalk.brightBlue('Creating ServiceFactoryWithNoOpSyncService'));
+  atServiceFactory = ServiceFactoryWithNoOpSyncService();
+
+  // }
 
 // Now on to the atPlatform startup
   AtSignLogger.root_level = 'SHOUT';
@@ -246,8 +246,8 @@ Future<void> atTalk(List<String> args) async {
         hasTerminal = true;
         var success =
             sendNotification(atClient.notificationService, key, input, logger);
-          spin[0] = true;
-           await brialleSpin(spin);
+        spin[0] = true;
+        await brialleSpin(spin);
         if (!await success) {
           print(
               '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
@@ -279,12 +279,14 @@ Future<bool> sendNotification(NotificationService notificationService,
     try {
       NotificationResult result = await notificationService.notify(
           NotificationParams.forUpdate(key,
-              value: input, notificationExpiry: Duration(seconds: 30)),
-          waitForFinalDeliveryStatus: false,
-          checkForFinalDeliveryStatus: false);
+              value: input, notificationExpiry: Duration(seconds: 360)),
+          waitForFinalDeliveryStatus: true, onSentToSecondary: (p0) {
+        print('whoohoo');
+      }, checkForFinalDeliveryStatus: true);
       if (result.atClientException != null) {
         logger.warning(result.atClientException);
         retry++;
+        print('retrying');
         await Future.delayed(Duration(milliseconds: (500 * (retry))));
       } else {
         success = true;
