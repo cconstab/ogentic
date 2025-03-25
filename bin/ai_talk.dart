@@ -158,16 +158,10 @@ Future<void> atTalk(List<String> args) async {
   AtKey namekey = key;
   namekey.key = "firstname.attalk";
   if (firstname != '') {
-    await atClient.put(namekey, firstname);
+    await atClient.put(namekey, firstname, putRequestOptions: PutRequestOptions()..useRemoteAtServer=true);
   }
+
   
-
-  //  stdout.write(chalk.brightBlue('\r\x1b[KSynching ... '));
-  //  await Future.delayed(Duration(milliseconds: 4000));
-  //  stdout.writeln(chalk.brightGreen('Synched'));
-
-
-
   atClient.notificationService.subscribe(regex: 'attalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {
     String keyAtsign = notification.key;
