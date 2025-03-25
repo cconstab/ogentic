@@ -148,19 +148,29 @@ Future<void> aiTalkServer(List<String> args) async {
     if (keyAtsign == 'aitalk') {
       logger.info('aiTalk update received from ${notification.from} notification id : ${notification.id}');
       var talk = notification.value!;
-      //print('Getting firstname \n');
+
+      // Terminal Control
+      // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
+      //
+      print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen(talk));
+      
       var namekey = AtKey()
         ..key = "firstname"
         ..sharedBy = notification.from
         ..sharedWith = toAtsign
         ..namespace = nameSpace
         ..metadata = metaData;
+     
+      try{  
       var nameAtkey = await atClient.get(namekey,getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
       firstname = nameAtkey.value;
       firstname = firstname.split(" ").elementAt(0);
       if (firstname.isEmpty) firstname = notification.from;
+      }catch(e){
+  logger.info('Notification no value found for: FirstName');
+}
       
-      print('got the firstname $firstname');
+      print(chalk.brightBlue('\r\x1b[KFirstname: ') + chalk.lightBlue(firstname));
 
       var contextKey = AtKey()
         ..key = "context"
@@ -168,11 +178,14 @@ Future<void> aiTalkServer(List<String> args) async {
         ..sharedWith = toAtsign
         ..namespace = nameSpace
         ..metadata = metaData;
-
+try{
       var contextAtkey = await atClient.get(contextKey,getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
       context = contextAtkey.value;
+}catch(e){
+  logger.info('Notification no value found for: Context');
+}
 
-      print('got the context $context');
+      print(chalk.brightBlue('\r\x1b[KContext: ') +chalk.lightBlue(context));
 
       var key = AtKey()
         ..key = 'aitalk'
@@ -181,10 +194,6 @@ Future<void> aiTalkServer(List<String> args) async {
         ..namespace = nameSpace
         ..metadata = metaData;
 
-      // Terminal Control
-      // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
-      //
-      print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen(talk));
       String? answer = await questionLlamma(talk, firstname, context);
       pipePrint('$fromAtsign: $answer\n');
 
