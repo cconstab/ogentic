@@ -272,13 +272,12 @@ Future<bool> sendNotification(
   bool success = false;
 
   // back off retries (max 3)
-  for (int retry = 0; retry < 3; retry++) {
+  for (int retry = 1; retry < 4; retry++) {
     try {
       NotificationResult result = await notificationService.notify(NotificationParams.forUpdate(key, value: input,notificationExpiry: Duration(seconds: 30)),
           waitForFinalDeliveryStatus: false, checkForFinalDeliveryStatus: false);
       if (result.atClientException != null) {
         logger.warning(result.atClientException);
-        retry++;
         await Future.delayed(Duration(milliseconds: (500 * (retry))));
       } else {
         success = true;

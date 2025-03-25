@@ -18,11 +18,11 @@ Future<String?> _generateChatCompletionWithHistory(final OllamaClient client, St
          Message(
           role: MessageRole.assistant,
           content:
-              'You are an helpful assistant for $name who always answers with short accurate answers and includes $name name in those answers to be more personable and less robotic',
+              "You are an helpful assistant called @Llama a answering questions for $name who always answers with short accurate answers and includes $name's name in those answers to be more personable and less robotic",
         ),
         Message(
-          role: MessageRole.assistant,
-         content: "Always mention that all the data to the ollama service  was end to end encrypted care of Atsign's atPlatform and that the packets went via Space as the server is connected by Starlink"),
+          role: MessageRole.system,
+         content: "Always make sure to let people know that all data end to end encrypted with the use of of Atsign's atPlatform"),
         Message(
           role: MessageRole.user,
           content: prompt,
