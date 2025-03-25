@@ -5,7 +5,6 @@ import 'dart:async';
 // external packages
 import 'package:args/args.dart';
 import 'package:ogentic/pipe_print.dart';
-import 'package:ogentic/service_factories.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
 
@@ -25,18 +24,18 @@ final RegExp generateCommandRegEx = RegExp(r'^/gen \d+$');
 
 void main(List<String> args) async {
   //starting secondary in a zone
-  var logger = AtSignLogger('atTalk sender ');
+  var logger = AtSignLogger('aiTalk sender ');
   logger.logger.level = Level.SHOUT;
   await runZonedGuarded(() async {
-    await atTalk(args);
+    await aiTalkServer(args);
   }, (error, stackTrace) {
     logger.severe('Uncaught error: $error');
     logger.severe(stackTrace.toString());
   });
 }
 
-Future<void> atTalk(List<String> args) async {
-  final AtSignLogger logger = AtSignLogger(' atTalk ');
+Future<void> aiTalkServer(List<String> args) async {
+  final AtSignLogger logger = AtSignLogger(' aiTalk ');
   logger.hierarchicalLoggingEnabled = true;
   logger.logger.level = Level.SHOUT;
 
@@ -45,11 +44,9 @@ Future<void> atTalk(List<String> args) async {
   parser.addOption('key-file',
       abbr: 'k', mandatory: false, help: 'Your atSign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('atsign', abbr: 'a', mandatory: true, help: 'Your atSign');
-  parser.addOption('toatsign', abbr: 't', mandatory: false, help: 'Talk to this atSign');
   parser.addOption('root-domain', abbr: 'd', mandatory: false, help: 'Root Domain (defaults to root.atsign.org)');
   parser.addOption('namespace', abbr: 'n', mandatory: false, help: 'Namespace (defaults to llama)');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging', negatable: false);
-  parser.addFlag('never-sync', help: 'Completely disable sync', negatable: false);
 
   // Check the arguments
   dynamic parsedArgs;
@@ -61,6 +58,7 @@ Future<void> atTalk(List<String> args) async {
   String nameSpace = 'llama';
   String rootDomain = 'root.atsign.org';
   String firstname = '';
+  String context = '';
 
   try {
     // Arg check
@@ -94,10 +92,6 @@ Future<void> atTalk(List<String> args) async {
   }
 
   AtServiceFactory? atServiceFactory;
-  if (parsedArgs['never-sync']) {
-    stdout.writeln(chalk.brightBlue('Creating ServiceFactoryWithNoOpSyncService'));
-    atServiceFactory = ServiceFactoryWithNoOpSyncService();
-  }
 
 // Now on to the atPlatform startup
   AtSignLogger.root_level = 'SHOUT';
@@ -145,30 +139,44 @@ Future<void> atTalk(List<String> args) async {
   // Current atClient is the one which the onboardingService just authenticated
   AtClient atClient = AtClientManager.getInstance().atClient;
 
-  atClient.notificationService.subscribe(regex: 'attalk.$nameSpace@', shouldDecrypt: true).listen(
+  atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {
+    print('goti');
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
     keyAtsign = keyAtsign.replaceAll('.$nameSpace${notification.from}', '');
-    if (keyAtsign == 'attalk') {
-      logger.info('atTalk update received from ${notification.from} notification id : ${notification.id}');
+
+    if (keyAtsign == 'aitalk') {
+      logger.info('aiTalk update received from ${notification.from} notification id : ${notification.id}');
       var talk = notification.value!;
       //print('Getting firstname \n');
       var namekey = AtKey()
-        ..key = "firstname.attalk"
+        ..key = "firstname"
+        ..sharedBy = notification.from
+        ..sharedWith = toAtsign
+        ..namespace = nameSpace
+        ..metadata = metaData;
+      var nameAtkey = await atClient.get(namekey);
+      firstname = nameAtkey.value;
+      firstname = firstname.split(" ").elementAt(0);
+      if (firstname.isEmpty) firstname = notification.from;
+      
+      print('got the firstname $firstname');
+
+      var contextKey = AtKey()
+        ..key = "context"
         ..sharedBy = notification.from
         ..sharedWith = toAtsign
         ..namespace = nameSpace
         ..metadata = metaData;
 
-      var nameAtkey = await atClient.get(namekey);
-      firstname = nameAtkey.value;
-      firstname = firstname.split(" ").elementAt(0);
-      if (firstname.isEmpty) firstname = notification.from;
-      //print('got the firstname $firstname');
+      var contextAtkey = await atClient.get(contextKey);
+      context = contextAtkey.value;
+
+      print('got the context $context');
 
       var key = AtKey()
-        ..key = 'attalk'
+        ..key = 'aitalk'
         ..sharedBy = fromAtsign
         ..sharedWith = notification.from
         ..namespace = nameSpace
@@ -178,7 +186,7 @@ Future<void> atTalk(List<String> args) async {
       // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
       //
       print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen(talk));
-      String? answer = await questionLlamma(talk, firstname);
+      String? answer = await questionLlamma(talk, firstname, context);
       pipePrint('$fromAtsign: $answer\n');
 
       var success = sendNotification(atClient.notificationService, key, answer!, logger);
