@@ -141,7 +141,6 @@ Future<void> aiTalkServer(List<String> args) async {
 
   atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {
-    print('goti');
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
     keyAtsign = keyAtsign.replaceAll('.$nameSpace${notification.from}', '');
