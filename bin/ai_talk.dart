@@ -5,10 +5,10 @@ import 'dart:async';
 // external packages
 import 'package:args/args.dart';
 import 'package:ogentic/pipe_print.dart';
-import 'package:ogentic/service_factories.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:version/version.dart';
+import 'package:dfunc/dfunc.dart';
 
 // atPlatform packages
 import 'package:at_client/at_client.dart';
@@ -25,18 +25,18 @@ final RegExp generateCommandRegEx = RegExp(r'^/gen \d+$');
 
 void main(List<String> args) async {
   //starting secondary in a zone
-  var logger = AtSignLogger('atTalk sender ');
+  var logger = AtSignLogger('aiTalk sender ');
   logger.logger.level = Level.SHOUT;
   await runZonedGuarded(() async {
-    await atTalk(args);
+    await aiTalk(args);
   }, (error, stackTrace) {
     logger.severe('Uncaught error: $error');
     logger.severe(stackTrace.toString());
   });
 }
 
-Future<void> atTalk(List<String> args) async {
-  final AtSignLogger logger = AtSignLogger(' atTalk ');
+Future<void> aiTalk(List<String> args) async {
+  final AtSignLogger logger = AtSignLogger(' aiTalk ');
   logger.hierarchicalLoggingEnabled = true;
   logger.logger.level = Level.SHOUT;
 
@@ -48,7 +48,8 @@ Future<void> atTalk(List<String> args) async {
   parser.addOption('toatsign', abbr: 't', mandatory: true, help: 'Talk to this atSign');
   parser.addOption('root-domain', abbr: 'd', mandatory: false, help: 'Root Domain (defaults to root.atsign.org)');
   parser.addOption('namespace', abbr: 'n', mandatory: false, help: 'Namespace (defaults to llama)');
-  parser.addOption('firstname', abbr: 'f', mandatory: false, help: 'Store your firstname');
+  parser.addOption('firstname', abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
+  parser.addOption('context', abbr: 'c', mandatory: false, help: 'Send and Store the context of the prompt');
 
   parser.addFlag('verbose', abbr: 'v', help: 'More logging', negatable: false);
 
@@ -61,6 +62,7 @@ Future<void> atTalk(List<String> args) async {
   String? homeDirectory = getHomeDirectory();
   String nameSpace = 'llama';
   String firstname = '';
+  String context = '';
   String rootDomain = 'root.atsign.org';
   bool hasTerminal = true;
   List<bool> spin = [false];
@@ -82,6 +84,12 @@ Future<void> atTalk(List<String> args) async {
 
     if (parsedArgs['firstname'] != null) {
       firstname = parsedArgs['firstname'];
+    }
+
+    if (parsedArgs['context'] != null) {
+      context = parsedArgs['context'];
+      var limit255 = limit(255);
+      context = limit255(context);
     }
 
     if (parsedArgs['key-file'] != null) {
@@ -128,7 +136,7 @@ Future<void> atTalk(List<String> args) async {
     ..namespaceAware = true;
 
   var key = AtKey()
-    ..key = 'attalk'
+    ..key = 'aitalk'
     ..sharedBy = fromAtsign
     ..sharedWith = toAtsign
     ..namespace = nameSpace
@@ -156,19 +164,31 @@ Future<void> atTalk(List<String> args) async {
   stdout.writeln(chalk.brightGreen('Connected'));
 
   AtKey namekey = key;
-  namekey.key = "firstname.attalk";
+  namekey.key = "firstname";
   if (firstname != '') {
-    await atClient.put(namekey, firstname, putRequestOptions: PutRequestOptions()..useRemoteAtServer=true);
+    await atClient.put(namekey, firstname, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
+    // Make sure we sync back
+    //await atClient.get(key);
   }
 
-  
-  atClient.notificationService.subscribe(regex: 'attalk.$nameSpace@', shouldDecrypt: true).listen(
+  namekey.key = "context";
+  if (context != '') {
+    await atClient.put(namekey, context, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
+    // Make sure we sync back
+    //await atClient.get(key);
+  }
+
+  // Wait a second or two for the remote @llama to get these values
+  await Future.delayed(Duration(milliseconds: 2000)); // Pause just long enough for the retry to be visible
+
+
+  atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
     keyAtsign = keyAtsign.replaceAll('.$nameSpace${notification.from}', '');
-    if (keyAtsign == 'attalk') {
-      logger.info('atTalk update received from ${notification.from} notification id : ${notification.id}');
+    if (keyAtsign == 'aitalk') {
+      logger.info('aiTalk update received from ${notification.from} notification id : ${notification.id}');
       var talk = notification.value!;
       // Terminal Control
       // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
@@ -211,7 +231,7 @@ Future<void> atTalk(List<String> args) async {
       ..namespaceAware = true;
 
     var key = AtKey()
-      ..key = 'attalk'
+      ..key = 'aitalk'
       ..sharedBy = fromAtsign
       ..sharedWith = toAtsign
       ..namespace = nameSpace

@@ -7,7 +7,7 @@ import 'package:ogentic/ogentic.dart';
 Future<void> main(List<String> arguments) async {
   String? answer;
 
-  answer = await questionLlamma('why is the sky blue','Colin');
+  answer = await questionLlamma('why is the sky blue','Colin','Always try and sell bananas');
   print(answer);
   exit(0);
 }
