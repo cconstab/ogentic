@@ -167,19 +167,14 @@ Future<void> aiTalk(List<String> args) async {
   namekey.key = "firstname";
   if (firstname != '') {
     await atClient.put(namekey, firstname, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
-    // Make sure we sync back
-    //await atClient.get(key);
   }
 
   namekey.key = "context";
   if (context != '') {
     await atClient.put(namekey, context, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
-    // Make sure we sync back
-    //await atClient.get(key);
   }
 
-  // Wait a second or two for the remote @llama to get these values
-  await Future.delayed(Duration(milliseconds: 2000)); // Pause just long enough for the retry to be visible
+
 
 
   atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(

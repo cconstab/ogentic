@@ -156,7 +156,7 @@ Future<void> aiTalkServer(List<String> args) async {
         ..sharedWith = toAtsign
         ..namespace = nameSpace
         ..metadata = metaData;
-      var nameAtkey = await atClient.get(namekey);
+      var nameAtkey = await atClient.get(namekey,getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
       firstname = nameAtkey.value;
       firstname = firstname.split(" ").elementAt(0);
       if (firstname.isEmpty) firstname = notification.from;
@@ -170,7 +170,7 @@ Future<void> aiTalkServer(List<String> args) async {
         ..namespace = nameSpace
         ..metadata = metaData;
 
-      var contextAtkey = await atClient.get(contextKey);
+      var contextAtkey = await atClient.get(contextKey,getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
       context = contextAtkey.value;
 
       print('got the context $context');
