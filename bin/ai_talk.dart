@@ -47,11 +47,10 @@ Future<void> atTalk(List<String> args) async {
   parser.addOption('atsign', abbr: 'a', mandatory: true, help: 'Your atSign');
   parser.addOption('toatsign', abbr: 't', mandatory: true, help: 'Talk to this atSign');
   parser.addOption('root-domain', abbr: 'd', mandatory: false, help: 'Root Domain (defaults to root.atsign.org)');
-  parser.addOption('namespace', abbr: 'n', mandatory: false, help: 'Namespace (defaults to ai6bh)');
+  parser.addOption('namespace', abbr: 'n', mandatory: false, help: 'Namespace (defaults to llama)');
   parser.addOption('firstname', abbr: 'f', mandatory: false, help: 'Store your firstname');
 
   parser.addFlag('verbose', abbr: 'v', help: 'More logging', negatable: false);
-  parser.addFlag('disable-sync', help: 'Disable sync', negatable: false);
 
   // Check the arguments
   dynamic parsedArgs;
@@ -60,7 +59,7 @@ Future<void> atTalk(List<String> args) async {
   String fromAtsign = 'unknown';
   String toAtsign = 'unknown';
   String? homeDirectory = getHomeDirectory();
-  String nameSpace = 'ai6bh';
+  String nameSpace = 'llama';
   String firstname = '';
   String rootDomain = 'root.atsign.org';
   bool hasTerminal = true;
@@ -102,9 +101,6 @@ Future<void> atTalk(List<String> args) async {
   }
 
   AtServiceFactory? atServiceFactory;
-  if (parsedArgs['disable-sync']) {
-    atServiceFactory = ServiceFactoryWithNoOpSyncService();
-  }
 
 // Now on to the atPlatform startup
   AtSignLogger.root_level = 'SHOUT';
@@ -162,8 +158,16 @@ Future<void> atTalk(List<String> args) async {
   AtKey namekey = key;
   namekey.key = "firstname.attalk";
   if (firstname != '') {
-    atClient.put(namekey, firstname);
+    await atClient.put(namekey, firstname);
   }
+  
+
+  //  stdout.write(chalk.brightBlue('\r\x1b[KSynching ... '));
+  //  await Future.delayed(Duration(milliseconds: 4000));
+  //  stdout.writeln(chalk.brightGreen('Synched'));
+
+
+
   atClient.notificationService.subscribe(regex: 'attalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {
     String keyAtsign = notification.key;

@@ -47,7 +47,7 @@ Future<void> atTalk(List<String> args) async {
   parser.addOption('atsign', abbr: 'a', mandatory: true, help: 'Your atSign');
   parser.addOption('toatsign', abbr: 't', mandatory: false, help: 'Talk to this atSign');
   parser.addOption('root-domain', abbr: 'd', mandatory: false, help: 'Root Domain (defaults to root.atsign.org)');
-  parser.addOption('namespace', abbr: 'n', mandatory: false, help: 'Namespace (defaults to ai6bh)');
+  parser.addOption('namespace', abbr: 'n', mandatory: false, help: 'Namespace (defaults to llama)');
   parser.addFlag('verbose', abbr: 'v', help: 'More logging', negatable: false);
   parser.addFlag('never-sync', help: 'Completely disable sync', negatable: false);
 
@@ -58,9 +58,8 @@ Future<void> atTalk(List<String> args) async {
   String fromAtsign = 'unknown';
   String toAtsign = 'unknown';
   String? homeDirectory = getHomeDirectory();
-  String nameSpace = 'ai6bh';
+  String nameSpace = 'llama';
   String rootDomain = 'root.atsign.org';
-  bool hasTerminal = true;
   String firstname = '';
 
   try {
@@ -125,13 +124,6 @@ Future<void> atTalk(List<String> args) async {
     ..isEncrypted = true
     ..namespaceAware = true;
 
-  var key = AtKey()
-    ..key = 'attalk'
-    ..sharedBy = fromAtsign
-    ..sharedWith = toAtsign
-    ..namespace = nameSpace
-    ..metadata = metaData;
-
   AtOnboardingService onboardingService =
       AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig, atServiceFactory: atServiceFactory);
   bool onboarded = false;
@@ -152,7 +144,6 @@ Future<void> atTalk(List<String> args) async {
 
   // Current atClient is the one which the onboardingService just authenticated
   AtClient atClient = AtClientManager.getInstance().atClient;
- 
 
   atClient.notificationService.subscribe(regex: 'attalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {
@@ -204,7 +195,6 @@ Future<void> atTalk(List<String> args) async {
       onDone: () => logger.info('Notification listener stopped'));
 
   String input = "";
-  String buffer = "";
   pipePrint('$fromAtsign: ');
 
   var lines = stdin.transform(utf8.decoder).transform(const LineSplitter());
@@ -225,46 +215,7 @@ Future<void> atTalk(List<String> args) async {
       int length = int.parse(input.split(' ')[1]);
       input = String.fromCharCodes(Iterable.generate(length, (index) => digits.codeUnitAt(index % 10)));
     }
-
-    var metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = true;
-
-    var key = AtKey()
-      ..key = 'attalk'
-      ..sharedBy = fromAtsign
-      ..sharedWith = toAtsign
-      ..namespace = nameSpace
-      ..metadata = metaData;
-
-    if (!(input == "")) {
-      if (!(stdin.hasTerminal)) {
-        hasTerminal = false;
-        buffer = '$buffer\n\r$input';
-      } else {
-        hasTerminal = true;
-        var success = sendNotification(atClient.notificationService, key, input, logger);
-        if (!await success) {
-          print(
-              '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
-          pipePrint('$fromAtsign: ');
-        }
-      }
-    }
   }
-
-// Send file contents if stdin has no terminal
-  if (!(hasTerminal)) {
-    var success = sendNotification(
-        atClient.notificationService, key, chalk.brightBlue('Sending a file') + chalk.white(buffer), logger);
-    if (!await success) {
-      print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
-      pipePrint('$fromAtsign: ');
-    }
-  }
-
-  exit(0);
 }
 
 Future<bool> sendNotification(
@@ -274,8 +225,10 @@ Future<bool> sendNotification(
   // back off retries (max 3)
   for (int retry = 1; retry < 4; retry++) {
     try {
-      NotificationResult result = await notificationService.notify(NotificationParams.forUpdate(key, value: input,notificationExpiry: Duration(seconds: 30)),
-          waitForFinalDeliveryStatus: false, checkForFinalDeliveryStatus: false);
+      NotificationResult result = await notificationService.notify(
+          NotificationParams.forUpdate(key, value: input, notificationExpiry: Duration(seconds: 30)),
+          waitForFinalDeliveryStatus: false,
+          checkForFinalDeliveryStatus: false);
       if (result.atClientException != null) {
         logger.warning(result.atClientException);
         await Future.delayed(Duration(milliseconds: (500 * (retry))));
