@@ -189,7 +189,7 @@ Future<void> aiTalk(List<String> args) async {
       if (hasTerminal) {
         print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen(talk));
       } else {
-        stdout.write(talk);
+        stdout.write("$talk\n");
       }
       pipePrint('$fromAtsign: ');
     }
