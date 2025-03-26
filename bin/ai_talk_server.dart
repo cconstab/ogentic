@@ -4,7 +4,7 @@ import 'dart:async';
 
 // external packages
 import 'package:args/args.dart';
-import 'package:ogentic/pipe_print.dart';
+import 'package:ogentic/server_print.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
 
@@ -152,24 +152,24 @@ Future<void> aiTalkServer(List<String> args) async {
       // Terminal Control
       // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
       //
-      print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen(talk));
-      
+      print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.lightGreen(talk));
+
       var namekey = AtKey()
         ..key = "firstname"
         ..sharedBy = notification.from
         ..sharedWith = toAtsign
         ..namespace = nameSpace
         ..metadata = metaData;
-     
-      try{  
-      var nameAtkey = await atClient.get(namekey,getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
-      firstname = nameAtkey.value;
-      firstname = firstname.split(" ").elementAt(0);
-      if (firstname.isEmpty) firstname = notification.from;
-      }catch(e){
-  logger.info('Notification no value found for: FirstName');
-}
-      
+
+      try {
+        var nameAtkey = await atClient.get(namekey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+        firstname = nameAtkey.value;
+        firstname = firstname.split(" ").elementAt(0);
+        if (firstname.isEmpty) firstname = notification.from;
+      } catch (e) {
+        logger.info('Notification no value found for: FirstName');
+      }
+
       print(chalk.brightBlue('\r\x1b[KFirstname: ') + chalk.lightBlue(firstname));
 
       var contextKey = AtKey()
@@ -178,14 +178,15 @@ Future<void> aiTalkServer(List<String> args) async {
         ..sharedWith = toAtsign
         ..namespace = nameSpace
         ..metadata = metaData;
-try{
-      var contextAtkey = await atClient.get(contextKey,getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
-      context = contextAtkey.value;
-}catch(e){
-  logger.info('Notification no value found for: Context');
-}
+      try {
+        var contextAtkey =
+            await atClient.get(contextKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+        context = contextAtkey.value;
+      } catch (e) {
+        logger.info('Notification no value found for: Context');
+      }
 
-      print(chalk.brightBlue('\r\x1b[KContext: ') +chalk.lightBlue(context));
+      print(chalk.brightBlue('\r\x1b[KContext: ') + chalk.lightBlue(context));
 
       var key = AtKey()
         ..key = 'aitalk'
@@ -195,28 +196,29 @@ try{
         ..metadata = metaData;
 
       String? answer = await questionLlamma(talk, firstname, context);
-      pipePrint('$fromAtsign: $answer\n');
+      serverPrint('$fromAtsign: ');
+      print(chalk.lightBlue(answer));
 
       var success = sendNotification(atClient.notificationService, key, answer!, logger);
       if (!await success) {
         print(
             '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$answer" to ${notification.from} - unable to reach the Internet !');
-        pipePrint('$fromAtsign: ');
+        serverPrint('$fromAtsign: ');
       }
 
-      pipePrint('$fromAtsign: ');
+      serverPrint('$fromAtsign: ');
     }
   }),
       onError: (e) => logger.severe('Notification Failed:$e'),
       onDone: () => logger.info('Notification listener stopped'));
 
   String input = "";
-  pipePrint('$fromAtsign: ');
+  serverPrint('$fromAtsign: ');
 
   var lines = stdin.transform(utf8.decoder).transform(const LineSplitter());
 
   await for (final l in lines) {
-    pipePrint('$fromAtsign: ');
+    serverPrint('$fromAtsign: ');
     input = l;
     if (input == '/exit') {
       exit(0);
