@@ -174,9 +174,6 @@ Future<void> aiTalk(List<String> args) async {
     await atClient.put(namekey, context, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
   }
 
-
-
-
   atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(
       ((notification) async {
     String keyAtsign = notification.key;
@@ -189,8 +186,9 @@ Future<void> aiTalk(List<String> args) async {
       // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
       //
       spin[0] = false;
-      print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen(talk));
-
+      if (hasTerminal) {
+        print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen(talk));
+      }
       pipePrint('$fromAtsign: ');
     }
   }),
@@ -202,6 +200,17 @@ Future<void> aiTalk(List<String> args) async {
   pipePrint('$fromAtsign: ');
 
   var lines = stdin.transform(utf8.decoder).transform(const LineSplitter());
+  metaData = Metadata()
+    ..isPublic = false
+    ..isEncrypted = true
+    ..namespaceAware = true;
+
+  key = AtKey()
+    ..key = 'aitalk'
+    ..sharedBy = fromAtsign
+    ..sharedWith = toAtsign
+    ..namespace = nameSpace
+    ..metadata = metaData;
 
   await for (final l in lines) {
     pipePrint('$fromAtsign: ');
@@ -219,18 +228,6 @@ Future<void> aiTalk(List<String> args) async {
       int length = int.parse(input.split(' ')[1]);
       input = String.fromCharCodes(Iterable.generate(length, (index) => digits.codeUnitAt(index % 10)));
     }
-
-    var metaData = Metadata()
-      ..isPublic = false
-      ..isEncrypted = true
-      ..namespaceAware = true;
-
-    var key = AtKey()
-      ..key = 'aitalk'
-      ..sharedBy = fromAtsign
-      ..sharedWith = toAtsign
-      ..namespace = nameSpace
-      ..metadata = metaData;
 
     if (!(input == "")) {
       if (!(stdin.hasTerminal)) {
@@ -253,15 +250,17 @@ Future<void> aiTalk(List<String> args) async {
 
 // Send file contents if stdin has no terminal
   if (!(hasTerminal)) {
-    var success = sendNotification(
-        atClient.notificationService, key, chalk.brightBlue('Sending a file') + chalk.white(buffer), logger);
+    var success = sendNotification(atClient.notificationService, key, buffer, logger);
     if (!await success) {
       print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
-      pipePrint('$fromAtsign: ');
+      //pipePrint('$fromAtsign: ');
     }
   }
-
-  exit(0);
+//  while (!spin[0]){
+//   await Future.delayed(Duration(milliseconds: (100)));
+//  }
+  //await Future.delayed(Duration(milliseconds: (500)));
+  //exit(0);
 }
 
 Future<bool> sendNotification(
