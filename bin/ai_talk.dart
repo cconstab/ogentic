@@ -148,7 +148,7 @@ Future<void> aiTalk(List<String> args) async {
   Duration retryDuration = Duration(seconds: 3);
   while (!onboarded) {
     try {
-      stdout.write(chalk.brightBlue('\r\x1b[KConnecting ... '));
+      stderr.write(chalk.brightBlue('\r\x1b[KConnecting ... '));
       await Future.delayed(Duration(milliseconds: 1000)); // Pause just long enough for the retry to be visible
       onboarded = await onboardingService.authenticate();
     } catch (exception) {
@@ -161,7 +161,7 @@ Future<void> aiTalk(List<String> args) async {
 
   // Current atClient is the one which the onboardingService just authenticated
   AtClient atClient = AtClientManager.getInstance().atClient;
-  stdout.writeln(chalk.brightGreen('Connected'));
+  stderr.writeln(chalk.brightGreen('Connected'));
 
   AtKey namekey = key;
   namekey.key = "firstname";
