@@ -252,16 +252,18 @@ Future<void> aiTalk(List<String> args) async {
 
 // Send file contents if stdin has no terminal
   if (!(hasTerminal)) {
-    var success = sendNotification(atClient.notificationService, key, buffer, logger);
-    if (!await success) {
+    spin[0] = true;
+    var success = await sendNotification(atClient.notificationService, key, buffer, logger);
+    if (success == false) {
+      spin[0] = false;
       print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
       //pipePrint('$fromAtsign: ');
     }
   }
- while (spin[0]){
-  await Future.delayed(Duration(milliseconds: (100)));
- }
-  await Future.delayed(Duration(milliseconds: (200)));
+  while (spin[0]) {
+    await Future.delayed(Duration(milliseconds: (100)));
+  }
+
   exit(0);
 }
 
