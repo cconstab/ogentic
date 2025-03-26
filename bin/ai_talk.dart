@@ -187,7 +187,7 @@ Future<void> aiTalk(List<String> args) async {
       //
       spin[0] = false;
       if (hasTerminal) {
-        print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen(talk));
+        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen('$talk\n'));
       } else {
         stdout.write("$talk\n");
       }
@@ -257,7 +257,6 @@ Future<void> aiTalk(List<String> args) async {
     if (success == false) {
       spin[0] = false;
       print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
-      //pipePrint('$fromAtsign: ');
     }
   }
   while (spin[0]) {
