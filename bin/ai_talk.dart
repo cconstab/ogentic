@@ -258,11 +258,11 @@ Future<void> aiTalk(List<String> args) async {
       //pipePrint('$fromAtsign: ');
     }
   }
-//  while (!spin[0]){
-//   await Future.delayed(Duration(milliseconds: (100)));
-//  }
-  //await Future.delayed(Duration(milliseconds: (500)));
-  //exit(0);
+ while (!spin[0]){
+  await Future.delayed(Duration(milliseconds: (100)));
+ }
+  await Future.delayed(Duration(milliseconds: (200)));
+  exit(0);
 }
 
 Future<bool> sendNotification(
