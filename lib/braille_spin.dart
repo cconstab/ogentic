@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-Future<bool> brialleSpin(List<bool> spin) async {
+Future<bool> brailleSpin(List<bool> spin) async {
   final frames = [
     '⠋',
     '⠙',
