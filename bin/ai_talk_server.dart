@@ -72,7 +72,7 @@ Future<void> aiTalkServer(List<String> args) async {
     }
 
     if (parsedArgs['namespace'] != null) {
-      nameSpace = "$nameSpace.${parsedArgs['namespace']}";
+      nameSpace = "${parsedArgs['namespace']}.$nameSpace";
     }
 
     if (parsedArgs['key-file'] != null) {
