@@ -1,6 +1,6 @@
 import 'package:ollama_dart/ollama_dart.dart';
 
-Future<String?> questionLlamma(String prompt, String name, String context) async {
+Future<String?> questionLlama(String prompt, String name, String context) async {
   String? answer;
   final client = OllamaClient();
 

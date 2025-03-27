@@ -4,21 +4,19 @@ import 'dart:async';
 
 // external packages
 import 'package:args/args.dart';
+import 'package:at_cli_commons/at_cli_commons.dart';
+import 'package:dfunc/dfunc.dart';
 import 'package:ogentic/pipe_print.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
-import 'package:version/version.dart';
-import 'package:dfunc/dfunc.dart';
 
 // atPlatform packages
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
-import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 
 // Local Packages
-import 'package:ogentic/home_directory.dart';
-import 'package:ogentic/check_file_exists.dart';
 import 'package:ogentic/braille_spin.dart';
+import 'package:uuid/uuid.dart';
 
 const String digits = '0123456789';
 final RegExp generateCommandRegEx = RegExp(r'^/gen \d+$');
@@ -30,31 +28,23 @@ void main(List<String> args) async {
   await runZonedGuarded(() async {
     await aiTalk(args);
   }, (error, stackTrace) {
-    logger.severe('Uncaught error: $error');
-    logger.severe(stackTrace.toString());
+    logger.shout('Uncaught error: $error');
+    logger.shout(stackTrace.toString());
   });
 }
 
 Future<void> aiTalk(List<String> args) async {
+  String nameSpace = 'llama';
+  String context = '';
+  String firstname = '';
+  AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   final AtSignLogger logger = AtSignLogger(' aiTalk ');
   logger.hierarchicalLoggingEnabled = true;
   logger.logger.level = Level.SHOUT;
 
-  var parser = ArgParser();
-// Args
-  parser.addOption('key-file',
-      abbr: 'k',
-      mandatory: false,
-      help: 'Your atSign\'s atKeys file if not in ~/.atsign/keys/');
-  parser.addOption('atsign', abbr: 'a', mandatory: true, help: 'Your atSign');
+  ArgParser parser = CLIBase.argsParser;
   parser.addOption('toatsign',
       abbr: 't', mandatory: true, help: 'Talk to this atSign');
-  parser.addOption('root-domain',
-      abbr: 'd',
-      mandatory: false,
-      help: 'Root Domain (defaults to root.atsign.org)');
-  parser.addOption('namespace',
-      abbr: 'n', mandatory: false, help: 'Namespace (defaults to llama)');
   parser.addOption('firstname',
       abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
   parser.addOption('context',
@@ -62,84 +52,48 @@ Future<void> aiTalk(List<String> args) async {
       mandatory: false,
       help: 'Send and Store the context of the prompt');
 
-  parser.addFlag('verbose', abbr: 'v', help: 'More logging', negatable: false);
+  // kludge because CLIBase default argsParse has namespace as mandatory
+  if (!args.join(' ').contains(' -n ')) {
+    args = List.from(args)..addAll(['-n', nameSpace]);
+  }
 
-  // Check the arguments
-  dynamic parsedArgs;
-  String atsignFile;
+  final parsedArgs = parser.parse(args);
+  String toAtsign = parsedArgs['toatsign'];
 
-  String fromAtsign = 'unknown';
-  String toAtsign = 'unknown';
-  String? homeDirectory = getHomeDirectory();
-  String nameSpace = 'llama';
-  String firstname = '';
-  String context = '';
-  String rootDomain = 'root.atsign.org';
+  if (parsedArgs['firstname'] != null) {
+    firstname = parsedArgs['firstname'];
+  }
+
+  if (parsedArgs['context'] != null) {
+    context = parsedArgs['context'];
+    var limit255 = limit(255);
+    context = limit255(context);
+  }
+
+  final cli = CLIBase(
+    atSign: parsedArgs['atsign'],
+    atKeysFilePath: parsedArgs['key-file'],
+    nameSpace: parsedArgs['namespace'],
+    rootDomain: parsedArgs['root-domain'],
+    homeDir: getHomeDirectory(),
+    storageDir: parsedArgs['storage-dir'] ??
+        standardAtClientStoragePath(
+          baseDir: getHomeDirectory()!,
+          atSign: parsedArgs['atsign'],
+          progName: 'ai_talk',
+          uniqueID: Uuid().v4(), // many clients
+        ),
+    verbose: parsedArgs['verbose'],
+    syncDisabled: parsedArgs['never-sync'],
+    maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
+    passPhrase: parsedArgs['passPhrase'],
+  );
+
+  await cli.init();
+  final atClient = cli.atClient;
+
   bool hasTerminal = true;
   List<bool> spin = [false];
-
-  try {
-    // Arg check
-    parsedArgs = parser.parse(args);
-    // Find atSign key file
-    fromAtsign = parsedArgs['atsign'];
-    toAtsign = parsedArgs['toatsign'];
-
-    if (parsedArgs['root-domain'] != null) {
-      rootDomain = parsedArgs['root-domain'];
-    }
-
-    if (parsedArgs['namespace'] != null) {
-      nameSpace = "${parsedArgs['namespace']}.$nameSpace";
-    }
-
-    if (parsedArgs['firstname'] != null) {
-      firstname = parsedArgs['firstname'];
-    }
-
-    if (parsedArgs['context'] != null) {
-      context = parsedArgs['context'];
-      var limit255 = limit(255);
-      context = limit255(context);
-    }
-
-    if (parsedArgs['key-file'] != null) {
-      atsignFile = parsedArgs['key-file'];
-    } else {
-      atsignFile = '${fromAtsign}_key.atKeys';
-      atsignFile = '$homeDirectory/.atsign/keys/$atsignFile';
-    }
-    // Check atKeyFile selected exists
-    if (!await fileExists(atsignFile)) {
-      throw ('\n Unable to find .atKeys file : $atsignFile');
-    }
-  } catch (e) {
-    print(parser.usage);
-    print(e);
-    exit(1);
-  }
-
-  AtServiceFactory? atServiceFactory;
-
-// Now on to the atPlatform startup
-  AtSignLogger.root_level = 'SHOUT';
-  if (parsedArgs['verbose']) {
-    logger.logger.level = Level.INFO;
-
-    AtSignLogger.root_level = 'INFO';
-  }
-
-  //onboarding preference builder can be used to set onboardingService parameters
-  AtOnboardingPreference atOnboardingConfig = AtOnboardingPreference()
-    ..hiveStoragePath = '$homeDirectory/.$nameSpace/$fromAtsign/storage'
-    ..namespace = nameSpace
-    ..downloadPath = '$homeDirectory/.$nameSpace/files'
-    ..isLocalStoreRequired = false
-    ..commitLogPath = '$homeDirectory/.$nameSpace/$fromAtsign/storage/commitLog'
-    ..rootDomain = rootDomain
-    ..fetchOfflineNotifications = true
-    ..atKeysFilePath = atsignFile
-    ..atProtocolEmitted = Version(2, 0, 0);
 
   var metaData = Metadata()
     ..isPublic = false
@@ -148,40 +102,15 @@ Future<void> aiTalk(List<String> args) async {
 
   var key = AtKey()
     ..key = 'aitalk'
-    ..sharedBy = fromAtsign
+    ..sharedBy = cli.atSign
     ..sharedWith = toAtsign
     ..namespace = nameSpace
     ..metadata = metaData;
 
-  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
-      fromAtsign, atOnboardingConfig,
-      atServiceFactory: atServiceFactory);
-  bool onboarded = false;
-  Duration retryDuration = Duration(seconds: 3);
-  while (!onboarded) {
-    try {
-      stderr.write(chalk.brightBlue('\r\x1b[KConnecting ... '));
-      await Future.delayed(Duration(
-          milliseconds:
-              1000)); // Pause just long enough for the retry to be visible
-      onboarded = await onboardingService.authenticate();
-    } catch (exception) {
-      stdout.write(chalk.brightRed(
-          '$exception. Will retry in ${retryDuration.inSeconds} seconds'));
-    }
-    if (!onboarded) {
-      await Future.delayed(retryDuration);
-    }
-  }
-
-  // Current atClient is the one which the onboardingService just authenticated
-  AtClient atClient = AtClientManager.getInstance().atClient;
-  stderr.writeln(chalk.brightGreen('Connected'));
-
   AtKey nameKey = key;
   nameKey.key = "firstname";
   // Auto cleanup after an hour.
-  nameKey.metadata.ttl = 3600000;
+  nameKey.metadata.ttl = 60 * 60 * 1000;
   if (firstname != '') {
     await atClient.put(nameKey, firstname,
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
@@ -213,7 +142,7 @@ Future<void> aiTalk(List<String> args) async {
       } else {
         stdout.write("$talk\n");
       }
-      pipePrint('$fromAtsign: ');
+      pipePrint('${cli.atSign}: ');
     }
   }),
           onError: (e) => logger.severe('Notification Failed:$e'),
@@ -221,7 +150,7 @@ Future<void> aiTalk(List<String> args) async {
 
   String input = "";
   String buffer = "";
-  pipePrint('$fromAtsign: ');
+  pipePrint('${cli.atSign}: ');
 
   var lines = stdin.transform(utf8.decoder).transform(const LineSplitter());
   metaData = Metadata()
@@ -231,13 +160,13 @@ Future<void> aiTalk(List<String> args) async {
 
   key = AtKey()
     ..key = 'aitalk'
-    ..sharedBy = fromAtsign
+    ..sharedBy = cli.atSign
     ..sharedWith = toAtsign
     ..namespace = nameSpace
     ..metadata = metaData;
 
   await for (final l in lines) {
-    pipePrint('$fromAtsign: ');
+    pipePrint('${cli.atSign}: ');
     input = l;
     if (input == '/exit') {
       exit(0);
@@ -268,7 +197,7 @@ Future<void> aiTalk(List<String> args) async {
           spin[0] = false;
           print(
               '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
-          pipePrint('$fromAtsign: ');
+          pipePrint('${cli.atSign}: ');
         }
       }
     }
