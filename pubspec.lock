@@ -37,10 +37,10 @@ packages:
     dependency: transitive
     description:
       name: asn1lib
-      sha256: "1c296cd268f486cabcc3930e9b93a8133169305f18d722916e675959a88f6d2c"
+      sha256: e02d018628c870ef2d7f03e33f9ad179d89ff6ec52ca6c56bcb80bcef979867f
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.9"
+    version: "1.6.2"
   async:
     dependency: transitive
     description:
@@ -73,6 +73,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  at_cli_commons:
+    dependency: "direct main"
+    description:
+      name: at_cli_commons
+      sha256: "374d0d5e471d3f6802a5e7f3fb70208eeb163ca94f44c8ba065665b817c20b0c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   at_client:
     dependency: "direct main"
     description:
@@ -129,6 +137,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.14"
+  at_policy:
+    dependency: "direct main"
+    description:
+      path: "packages/at_policy"
+      ref: "policy-1.0.1"
+      resolved-ref: "93995231390dde9a68912ac62b369763f2429e85"
+      url: "https://github.com/atsign-foundation/at_libraries"
+    source: git
+    version: "1.0.1"
   at_server_status:
     dependency: transitive
     description:
@@ -165,10 +182,10 @@ packages:
     dependency: "direct main"
     description:
       name: chalkdart
-      sha256: e7cfcc9a9d9546843304c1ff87fe0696c7eb82ee70e6df63f555f321b15a40d8
+      sha256: "82dfa884e3cf97641eb0742a3b9ffd41490666b9ece548b2e32cbfefe540bf86"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.3"
+    version: "2.4.0"
   charcode:
     dependency: transitive
     description:
@@ -309,10 +326,10 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: "16ed7b077ef01ad6170a3d0c57caa4a112a38d7a2ed5602e0aca9ca6f3d98da6"
+      sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.3"
+    version: "2.1.4"
   file:
     dependency: transitive
     description:
@@ -682,7 +699,7 @@ packages:
     source: hosted
     version: "1.4.0"
   uuid:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: uuid
       sha256: "648e103079f7c64a36dc7d39369cabb358d377078a051d6ae2ad3aa539519313"
@@ -770,4 +787,4 @@ packages:
     source: hosted
     version: "0.2.3"
 sdks:
-  dart: ">=3.6.1 <4.0.0"
+  dart: ">=3.7.0 <4.0.0"
