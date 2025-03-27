@@ -43,13 +43,24 @@ Future<void> aiTalk(List<String> args) async {
   var parser = ArgParser();
 // Args
   parser.addOption('key-file',
-      abbr: 'k', mandatory: false, help: 'Your atSign\'s atKeys file if not in ~/.atsign/keys/');
+      abbr: 'k',
+      mandatory: false,
+      help: 'Your atSign\'s atKeys file if not in ~/.atsign/keys/');
   parser.addOption('atsign', abbr: 'a', mandatory: true, help: 'Your atSign');
-  parser.addOption('toatsign', abbr: 't', mandatory: true, help: 'Talk to this atSign');
-  parser.addOption('root-domain', abbr: 'd', mandatory: false, help: 'Root Domain (defaults to root.atsign.org)');
-  parser.addOption('namespace', abbr: 'n', mandatory: false, help: 'Namespace (defaults to llama)');
-  parser.addOption('firstname', abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
-  parser.addOption('context', abbr: 'c', mandatory: false, help: 'Send and Store the context of the prompt');
+  parser.addOption('toatsign',
+      abbr: 't', mandatory: true, help: 'Talk to this atSign');
+  parser.addOption('root-domain',
+      abbr: 'd',
+      mandatory: false,
+      help: 'Root Domain (defaults to root.atsign.org)');
+  parser.addOption('namespace',
+      abbr: 'n', mandatory: false, help: 'Namespace (defaults to llama)');
+  parser.addOption('firstname',
+      abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
+  parser.addOption('context',
+      abbr: 'c',
+      mandatory: false,
+      help: 'Send and Store the context of the prompt');
 
   parser.addFlag('verbose', abbr: 'v', help: 'More logging', negatable: false);
 
@@ -79,7 +90,7 @@ Future<void> aiTalk(List<String> args) async {
     }
 
     if (parsedArgs['namespace'] != null) {
-      nameSpace = parsedArgs['namespace'];
+      nameSpace = "$nameSpace${parsedArgs['namespace']}";
     }
 
     if (parsedArgs['firstname'] != null) {
@@ -142,17 +153,21 @@ Future<void> aiTalk(List<String> args) async {
     ..namespace = nameSpace
     ..metadata = metaData;
 
-  AtOnboardingService onboardingService =
-      AtOnboardingServiceImpl(fromAtsign, atOnboardingConfig, atServiceFactory: atServiceFactory);
+  AtOnboardingService onboardingService = AtOnboardingServiceImpl(
+      fromAtsign, atOnboardingConfig,
+      atServiceFactory: atServiceFactory);
   bool onboarded = false;
   Duration retryDuration = Duration(seconds: 3);
   while (!onboarded) {
     try {
       stderr.write(chalk.brightBlue('\r\x1b[KConnecting ... '));
-      await Future.delayed(Duration(milliseconds: 1000)); // Pause just long enough for the retry to be visible
+      await Future.delayed(Duration(
+          milliseconds:
+              1000)); // Pause just long enough for the retry to be visible
       onboarded = await onboardingService.authenticate();
     } catch (exception) {
-      stdout.write(chalk.brightRed('$exception. Will retry in ${retryDuration.inSeconds} seconds'));
+      stdout.write(chalk.brightRed(
+          '$exception. Will retry in ${retryDuration.inSeconds} seconds'));
     }
     if (!onboarded) {
       await Future.delayed(retryDuration);
@@ -165,37 +180,44 @@ Future<void> aiTalk(List<String> args) async {
 
   AtKey namekey = key;
   namekey.key = "firstname";
+  // Auto cleaup after an hour.
+  namekey.metadata.ttl = 3600000;
   if (firstname != '') {
-    await atClient.put(namekey, firstname, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
+    await atClient.put(namekey, firstname,
+        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
   }
 
   namekey.key = "context";
   if (context != '') {
-    await atClient.put(namekey, context, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
+    await atClient.put(namekey, context,
+        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
   }
 
-  atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(
-      ((notification) async {
+  atClient.notificationService
+      .subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true)
+      .listen(((notification) async {
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
     keyAtsign = keyAtsign.replaceAll('.$nameSpace${notification.from}', '');
     if (keyAtsign == 'aitalk') {
-      logger.info('aiTalk update received from ${notification.from} notification id : ${notification.id}');
+      logger.info(
+          'aiTalk update received from ${notification.from} notification id : ${notification.id}');
       var talk = notification.value!;
       // Terminal Control
       // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
       //
       spin[0] = false;
       if (hasTerminal) {
-        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen('$talk\n'));
+        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') +
+            chalk.brightGreen('$talk\n'));
       } else {
         stdout.write("$talk\n");
       }
       pipePrint('$fromAtsign: ');
     }
   }),
-      onError: (e) => logger.severe('Notification Failed:$e'),
-      onDone: () => logger.info('Notification listener stopped'));
+          onError: (e) => logger.severe('Notification Failed:$e'),
+          onDone: () => logger.info('Notification listener stopped'));
 
   String input = "";
   String buffer = "";
@@ -228,7 +250,8 @@ Future<void> aiTalk(List<String> args) async {
 
     if (generateCommandRegEx.hasMatch(input)) {
       int length = int.parse(input.split(' ')[1]);
-      input = String.fromCharCodes(Iterable.generate(length, (index) => digits.codeUnitAt(index % 10)));
+      input = String.fromCharCodes(
+          Iterable.generate(length, (index) => digits.codeUnitAt(index % 10)));
     }
 
     if (!(input == "")) {
@@ -239,7 +262,8 @@ Future<void> aiTalk(List<String> args) async {
         hasTerminal = true;
         spin[0] = true;
         brialleSpin(spin);
-        var success = await sendNotification(atClient.notificationService, key, input, logger);
+        var success = await sendNotification(
+            atClient.notificationService, key, input, logger);
         if (success == false) {
           spin[0] = false;
           print(
@@ -253,10 +277,12 @@ Future<void> aiTalk(List<String> args) async {
 // Send file contents if stdin has no terminal
   if (!(hasTerminal)) {
     spin[0] = true;
-    var success = await sendNotification(atClient.notificationService, key, buffer, logger);
+    var success = await sendNotification(
+        atClient.notificationService, key, buffer, logger);
     if (success == false) {
       spin[0] = false;
-      print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
+      print(
+          '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
     }
   }
   while (spin[0]) {
@@ -266,8 +292,8 @@ Future<void> aiTalk(List<String> args) async {
   exit(0);
 }
 
-Future<bool> sendNotification(
-    NotificationService notificationService, AtKey key, String input, AtSignLogger logger) async {
+Future<bool> sendNotification(NotificationService notificationService,
+    AtKey key, String input, AtSignLogger logger) async {
   bool success = false;
 
   // back off retries (max 3)
@@ -275,13 +301,16 @@ Future<bool> sendNotification(
     try {
       NotificationResult result = await notificationService.notify(
           NotificationParams.forUpdate(key,
-              value: input, notificationExpiry: Duration(seconds: 360), strategy: StrategyEnum.all),
+              value: input,
+              notificationExpiry: Duration(seconds: 360),
+              strategy: StrategyEnum.all),
           waitForFinalDeliveryStatus: false,
           onSentToSecondary: (p0) {},
           checkForFinalDeliveryStatus: false);
       if (result.atClientException != null) {
         logger.warning(result.atClientException);
-        print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')} retry number $retry of 3');
+        print(
+            '${chalk.brightRed.bold('\r\x1b[KError Sending: ')} retry number $retry of 3');
         await Future.delayed(Duration(milliseconds: (500 * (retry))));
       } else {
         success = true;
