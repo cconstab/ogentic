@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:dfunc/dfunc.dart';
+import 'package:ogentic/common.dart';
 import 'package:ogentic/pipe_print.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
@@ -34,9 +35,9 @@ void main(List<String> args) async {
 }
 
 Future<void> aiTalk(List<String> args) async {
-  String nameSpace = 'llama';
   String context = '';
   String firstname = '';
+  String nameSpace;
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   final AtSignLogger logger = AtSignLogger(' aiTalk ');
   logger.hierarchicalLoggingEnabled = true;
@@ -54,7 +55,7 @@ Future<void> aiTalk(List<String> args) async {
 
   // kludge because CLIBase default argsParse has namespace as mandatory
   if (!args.join(' ').contains(' -n ')) {
-    args = List.from(args)..addAll(['-n', nameSpace]);
+    args = List.from(args)..addAll(['-n', Consts.defaultNameSpace]);
   }
 
   final parsedArgs = parser.parse(args);
@@ -63,6 +64,8 @@ Future<void> aiTalk(List<String> args) async {
   if (parsedArgs['firstname'] != null) {
     firstname = parsedArgs['firstname'];
   }
+
+  nameSpace = parsedArgs['namespace'];
 
   if (parsedArgs['context'] != null) {
     context = parsedArgs['context'];
