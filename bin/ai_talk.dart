@@ -18,7 +18,7 @@ import 'package:at_onboarding_cli/at_onboarding_cli.dart';
 // Local Packages
 import 'package:ogentic/home_directory.dart';
 import 'package:ogentic/check_file_exists.dart';
-import 'package:ogentic/brialle_spin.dart';
+import 'package:ogentic/braille_spin.dart';
 
 const String digits = '0123456789';
 final RegExp generateCommandRegEx = RegExp(r'^/gen \d+$');
@@ -178,18 +178,18 @@ Future<void> aiTalk(List<String> args) async {
   AtClient atClient = AtClientManager.getInstance().atClient;
   stderr.writeln(chalk.brightGreen('Connected'));
 
-  AtKey namekey = key;
-  namekey.key = "firstname";
-  // Auto cleaup after an hour.
-  namekey.metadata.ttl = 3600000;
+  AtKey nameKey = key;
+  nameKey.key = "firstname";
+  // Auto cleanup after an hour.
+  nameKey.metadata.ttl = 3600000;
   if (firstname != '') {
-    await atClient.put(namekey, firstname,
+    await atClient.put(nameKey, firstname,
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
   }
 
-  namekey.key = "context";
+  nameKey.key = "context";
   if (context != '') {
-    await atClient.put(namekey, context,
+    await atClient.put(nameKey, context,
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
   }
 
@@ -261,7 +261,7 @@ Future<void> aiTalk(List<String> args) async {
       } else {
         hasTerminal = true;
         spin[0] = true;
-        brialleSpin(spin);
+        brailleSpin(spin);
         var success = await sendNotification(
             atClient.notificationService, key, input, logger);
         if (success == false) {

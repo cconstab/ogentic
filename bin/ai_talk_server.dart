@@ -57,7 +57,6 @@ Future<void> aiTalkServer(List<String> args) async {
   String? homeDirectory = getHomeDirectory();
   String nameSpace = 'llama';
   String rootDomain = 'root.atsign.org';
-  String firstname = '';
   String context = '';
 
   try {
@@ -154,16 +153,17 @@ Future<void> aiTalkServer(List<String> args) async {
       //
       print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.lightGreen(talk));
 
-      var namekey = AtKey()
+      var nameKey = AtKey()
         ..key = "firstname"
         ..sharedBy = notification.from
         ..sharedWith = toAtsign
         ..namespace = nameSpace
         ..metadata = metaData;
 
+      String firstname = '';
       try {
-        var nameAtkey = await atClient.get(namekey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
-        firstname = nameAtkey.value;
+        var nameAtkey = await atClient.get(nameKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+        firstname = nameAtkey.value ?? '';
         firstname = firstname.split(" ").elementAt(0);
         if (firstname.isEmpty) firstname = notification.from;
       } catch (e) {
