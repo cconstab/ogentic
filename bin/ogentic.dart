@@ -8,7 +8,7 @@ Future<void> main(List<String> arguments) async {
   String? answer;
 
   answer = await questionLlama(
-      'why is the sky blue', 'Colin', 'Always try and sell bananas');
+      'why is the sky blue', 'Colin', 'Always try and sell bananas','and more bananas');
   print(answer);
   exit(0);
 }

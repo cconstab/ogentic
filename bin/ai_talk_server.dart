@@ -200,7 +200,7 @@ class AITalkServer {
         ..metadata = _md;
 
       String? answer = await questionLlama(
-          talk, firstname, '$context\n\n$additionalContext\n');
+          talk, firstname, context,additionalContext);
       // String answer = 'Echoing:\n'
       //     '    atSign ${notification.from}\n'
       //     '    firstname: $firstname\n'
