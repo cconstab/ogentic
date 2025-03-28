@@ -1,18 +1,18 @@
 import 'package:ollama_dart/ollama_dart.dart';
 
 Future<String?> questionLlama(
-    String prompt, String name, String context) async {
+    String prompt, String name, String context, String additionalContext) async {
   String? answer;
   final client = OllamaClient();
 
   //await _generateChatCompletionStream(client);
   answer =
-      await _generateChatCompletionWithHistory(client, prompt, name, context);
+      await _generateChatCompletionWithHistory(client, prompt, name, context, additionalContext);
   return (answer);
 }
 
 Future<String?> _generateChatCompletionWithHistory(final OllamaClient client,
-    String prompt, String name, String context) async {
+    String prompt, String name, String context, String policyContext) async {
   final generated = await client.generateChatCompletion(
     request: GenerateChatCompletionRequest(
       model: 'llama3.2:latest',
@@ -28,6 +28,7 @@ Future<String?> _generateChatCompletionWithHistory(final OllamaClient client,
             content:
                 "Always make sure to let people know that all data end to end encrypted with the use of of Atsign's atPlatform"),
         Message(role: MessageRole.system, content: context),
+        Message(role: MessageRole.system, content: policyContext),
         Message(
           role: MessageRole.user,
           content: prompt,
