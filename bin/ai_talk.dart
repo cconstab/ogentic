@@ -38,61 +38,69 @@ Future<void> aiTalk(List<String> args) async {
   String context = '';
   String firstname = '';
   String nameSpace;
+  String toAtsign;
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   final AtSignLogger logger = AtSignLogger(' aiTalk ');
   logger.hierarchicalLoggingEnabled = true;
   logger.logger.level = Level.SHOUT;
 
   ArgParser parser = CLIBase.argsParser;
-  parser.addOption('toatsign',
-      abbr: 't', mandatory: true, help: 'Talk to this atSign');
-  parser.addOption('firstname',
-      abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
-  parser.addOption('context',
-      abbr: 'c',
-      mandatory: false,
-      help: 'Send and Store the context of the prompt');
+  CLIBase cli;
+  try {
+    parser.addOption('toatsign',
+        abbr: 't', mandatory: true, help: 'Talk to this atSign');
+    parser.addOption('firstname',
+        abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
+    parser.addOption('context',
+        abbr: 'c',
+        mandatory: false,
+        help: 'Send and Store the context of the prompt');
 
-  // kludge because CLIBase default argsParse has namespace as mandatory
-  if (!args.join(' ').contains(' -n ')) {
-    args = List.from(args)..addAll(['-n', Consts.defaultNameSpace]);
+    // kludge because CLIBase default argsParse has namespace as mandatory
+    if (!args.join(' ').contains(' -n ')) {
+      args = List.from(args)..addAll(['-n', Consts.defaultNameSpace]);
+    }
+
+    final parsedArgs = parser.parse(args);
+    toAtsign = parsedArgs['toatsign'];
+
+    if (parsedArgs['firstname'] != null) {
+      firstname = parsedArgs['firstname'];
+    }
+
+    nameSpace = parsedArgs['namespace'];
+
+    if (parsedArgs['context'] != null) {
+      context = parsedArgs['context'];
+      var limit255 = limit(255);
+      context = limit255(context);
+    }
+
+    cli = CLIBase(
+      atSign: parsedArgs['atsign'],
+      atKeysFilePath: parsedArgs['key-file'],
+      nameSpace: parsedArgs['namespace'],
+      rootDomain: parsedArgs['root-domain'],
+      homeDir: getHomeDirectory(),
+      storageDir: parsedArgs['storage-dir'] ??
+          standardAtClientStoragePath(
+            baseDir: getHomeDirectory()!,
+            atSign: parsedArgs['atsign'],
+            progName: 'ai_talk',
+            uniqueID: Uuid().v4(), // many clients
+          ),
+      verbose: parsedArgs['verbose'],
+      syncDisabled: parsedArgs['never-sync'],
+      maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
+      passPhrase: parsedArgs['passPhrase'],
+    );
+    await cli.init();
+  } catch (e) {
+    // Hack (nice one?) to remove the '-n' from the parser
+    print(parser.usage.replaceAll(RegExp('-n.*\n'), ''));
+    print(e);
+    exit(1);
   }
-
-  final parsedArgs = parser.parse(args);
-  String toAtsign = parsedArgs['toatsign'];
-
-  if (parsedArgs['firstname'] != null) {
-    firstname = parsedArgs['firstname'];
-  }
-
-  nameSpace = parsedArgs['namespace'];
-
-  if (parsedArgs['context'] != null) {
-    context = parsedArgs['context'];
-    var limit255 = limit(255);
-    context = limit255(context);
-  }
-
-  final cli = CLIBase(
-    atSign: parsedArgs['atsign'],
-    atKeysFilePath: parsedArgs['key-file'],
-    nameSpace: parsedArgs['namespace'],
-    rootDomain: parsedArgs['root-domain'],
-    homeDir: getHomeDirectory(),
-    storageDir: parsedArgs['storage-dir'] ??
-        standardAtClientStoragePath(
-          baseDir: getHomeDirectory()!,
-          atSign: parsedArgs['atsign'],
-          progName: 'ai_talk',
-          uniqueID: Uuid().v4(), // many clients
-        ),
-    verbose: parsedArgs['verbose'],
-    syncDisabled: parsedArgs['never-sync'],
-    maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
-    passPhrase: parsedArgs['passPhrase'],
-  );
-
-  await cli.init();
   final atClient = cli.atClient;
 
   bool hasTerminal = true;
