@@ -44,7 +44,6 @@ jobs:
       - name: compile
         shell: bash
         run: |
-          cd ogentic
           mkdir aitalk
           mkdir tarball
           dart pub get
@@ -67,7 +66,6 @@ jobs:
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
           MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
         run: |
-          cd packages/dart/twh_tools  
           # Load certificate
           CERT_PATH=$RUNNER_TEMP/twh-codesign.p12
           echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
