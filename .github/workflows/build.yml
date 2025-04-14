@@ -1,0 +1,123 @@
+name: Add binaries to release
+run-name: Add binaries to release ${{ github.event.release.tag_name }}
+
+on:
+  release:
+    types:
+      - created
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            output-name: aitalk-linux-x64.tgz
+            ext: ''
+            bundle: 'shell'
+          - os: macos-13
+            output-name: aitalk-macos-x64.zip
+            ext: ''
+            bundle: 'shell'
+          - os: macos-14
+            output-name: aitalk-macos-arm64.zip
+            ext: ''
+            bundle: 'shell'
+          - os: windows-latest
+            output-name: aitalk-windows-x64.zip
+            ext: '.exe'
+            bundle: 'windows'
+    runs-on: ${{ matrix.os }}
+    name: Upload ${{ matrix.os }} binaries to release ${{ github.event.release.tag_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
+      - uses: dart-lang/setup-dart@v1.6.5
+        with:
+          sdk: stable
+      - name: compile
+        shell: bash
+        run: |
+          cd ogentic
+          mkdir aitalk
+          mkdir tarball
+          dart pub get
+          dart analyze
+          export DART_BINS=$(ls bin/*.dart)
+          for dart_file in $DART_BINS; do
+              echo "Compiling $dart_file"
+              bin_name=${dart_file%.dart}
+              bin_name=${bin_name#bin/}
+              bin_name=$bin_name${{ matrix.ext }}
+              echo $bin_name
+              dart compile exe -o aitalk/$bin_name $dart_file
+          done
+          chmod +x twh/*
+      # codesign for apple
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        env:
+          MACOS_CODESIGN_CERT: ${{ secrets.MACOS_CODESIGN_CERT }}
+          MACOS_CODESIGN_CERT_PASSWORD: ${{ secrets.MACOS_CODESIGN_CERT_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          cd packages/dart/twh_tools  
+          # Load certificate
+          CERT_PATH=$RUNNER_TEMP/twh-codesign.p12
+          echo -n "$MACOS_CODESIGN_CERT" | base64 --decode -o $CERT_PATH
+          # create temp keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security default-keychain -s $KEYCHAIN_PATH
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MACOS_CODESIGN_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:apple,:,codesign: -s -k "$MACOS_KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          # codesign
+          /usr/bin/codesign \
+            --force \
+            -s "$MACOS_SIGNING_IDENTITY" \
+            --options=runtime \
+            --entitlements ./tools/templates/entitlements.plist \
+            --prefix "com.ai6bh." \
+            --timestamp \
+            -v \
+            aitalk/{at_activate,aitalk}       
+      # zip the build
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        run: | 
+          cd aitalk
+          ditto -c -k --keepParent aitalk tarball/${{ matrix.output-name }}
+      - if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          cd aitalk
+          tar -cvzf tarball/${{ matrix.output-name }} aitalk
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          cd aitalk
+          Compress-Archive -Path twh -Destination tarball/${{ matrix.output-name }}
+ 
+      # notarize the build
+      - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
+        env:
+          MACOS_APPLE_ID: ${{ secrets.MACOS_APPLE_ID }}
+          MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
+          MACOS_APPLE_ID_PASSWORD: ${{ secrets.MACOS_APPLE_ID_PASSWORD }}
+        run: |
+          cd aitalk
+          xcrun notarytool submit tarball/${{ matrix.output-name }} \
+            --apple-id "$MACOS_APPLE_ID" \
+            --team-id "$MACOS_TEAM_ID" \
+            --password "$MACOS_APPLE_ID_PASSWORD" \
+            --wait
+      - name: upload
+        shell: bash
+        run: |
+          cd aitalk/tarball
+          gh release upload ${{ github.event.release.tag_name }} ${{ matrix.output-name }}
+    
