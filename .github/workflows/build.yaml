@@ -85,7 +85,7 @@ jobs:
             --prefix "com.ai6bh." \
             --timestamp \
             -v \
-            aitalk/{at_activate,aitalk}       
+            aitalk/{at_activate,aitalk,aitalk_policy,aitalk_server}       
       # zip the build
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         run: | 
