@@ -104,7 +104,6 @@ jobs:
           MACOS_TEAM_ID: ${{ secrets.MACOS_TEAM_ID }}
           MACOS_APPLE_ID_PASSWORD: ${{ secrets.MACOS_APPLE_ID_PASSWORD }}
         run: |
-          cd aitalk
           xcrun notarytool submit tarball/${{ matrix.output-name }} \
             --apple-id "$MACOS_APPLE_ID" \
             --team-id "$MACOS_TEAM_ID" \
@@ -113,6 +112,6 @@ jobs:
       - name: upload
         shell: bash
         run: |
-          cd aitalk/tarball
+          cd tarball
           gh release upload ${{ github.event.release.tag_name }} ${{ matrix.output-name }}
     
