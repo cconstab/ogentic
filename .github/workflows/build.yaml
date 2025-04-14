@@ -57,7 +57,7 @@ jobs:
               echo $bin_name
               dart compile exe -o aitalk/$bin_name $dart_file
           done
-          chmod +x twh/*
+          chmod +x aitalk/*
       # codesign for apple
       - if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' }}
         env:
