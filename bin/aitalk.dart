@@ -54,6 +54,7 @@ Future<void> aiTalk(List<String> args) async {
     parser.addOption('context',
         abbr: 'c',
         mandatory: false,
+        defaultsTo: ".",
         help: 'Send and Store the context of the prompt');
 
     // kludge because CLIBase default argsParse has namespace as mandatory
@@ -70,11 +71,11 @@ Future<void> aiTalk(List<String> args) async {
 
     nameSpace = parsedArgs['namespace'];
 
-    if (parsedArgs['context'] != null) {
-      context = parsedArgs['context'];
-      var limit255 = limit(255);
-      context = limit255(context);
-    }
+    // Limit context to 255 Characters
+    context = parsedArgs['context'];
+    if (context.isEmpty) context = ".";
+    var limit255 = limit(255);
+    context = limit255(context);
 
     cli = CLIBase(
       atSign: parsedArgs['atsign'],
@@ -96,8 +97,9 @@ Future<void> aiTalk(List<String> args) async {
     );
     await cli.init();
   } catch (e) {
-    // Hack (nice one?) to remove the '-n' from the parser
-    print(parser.usage.replaceAll(RegExp('-n.*\n'), ''));
+    // Kludge to remove the '-n' mandatory notice from the parser
+    print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'),
+        '--namespace                Namespace\n'));
     print(e);
     exit(1);
   }
@@ -122,16 +124,15 @@ Future<void> aiTalk(List<String> args) async {
   nameKey.key = "firstname";
   // Auto cleanup after an hour.
   nameKey.metadata.ttl = 60 * 60 * 1000;
+  // Keep name in place for an hour
   if (firstname != '') {
     await atClient.put(nameKey, firstname,
         putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
   }
-
+  // Remove context if not given
   nameKey.key = "context";
-  if (context != '') {
-    await atClient.put(nameKey, context,
-        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
-  }
+  await atClient.put(nameKey, context,
+      putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
 
   atClient.notificationService
       .subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true)
