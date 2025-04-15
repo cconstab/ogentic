@@ -18,9 +18,15 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            arch: amd64
             output-name: aitalk-linux-x64.tgz
             ext: ''
             bundle: 'shell'
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            output-name: aitalk-linux-arm64.tgz
+            ext: ''
+            bundle: 'shell'           
           - os: macos-13
             output-name: aitalk-macos-x64.zip
             ext: ''
