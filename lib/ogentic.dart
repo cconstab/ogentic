@@ -21,7 +21,7 @@ Future<String?> _generateChatCompletionWithHistory(final OllamaClient client,
         Message(
           role: MessageRole.assistant,
           content:
-              "You are an helpful assistant called @Llama a answering questions for $name who always answers with short accurate answers and includes $name's name in those answers to be more personable and less robotic",
+              "You are an helpful assistant answering questions for $name who always answers with short accurate answers and includes $name's name in those answers to be more personable and less robotic",
         ),
         Message(
             role: MessageRole.system,
