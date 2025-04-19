@@ -88,8 +88,8 @@ class AITalkServer {
       print(e);
       exit(1);
     }
-     atClient = cli.atClient;
-    
+    atClient = cli.atClient;
+
     if (policy) {
       // Make a client for talking to the policy service
       _policyClient = AtRpcClient(
@@ -104,7 +104,36 @@ class AITalkServer {
         onDone: () => logger.info('Notification listener stopped'));
   }
 
-  Future<void> requestHandler(notification) async {
+  Future<void> requestHandler(AtNotification notification) async {
+    var mutexKey = AtKey.fromString('${notification.id}'
+        '.session_mutexes.$nameSpace'
+        '${atClient.getCurrentAtSign()!}')
+      ..metadata = (Metadata()
+        ..immutable = true // only one srvd will succeed in doing this
+        ..ttl = 30000); // expire after 30 seconds to keep datastore clean
+    PutRequestOptions pro = PutRequestOptions()
+      ..shouldEncrypt = false
+      ..useRemoteAtServer = true;
+
+    try {
+      await atClient.put(
+        mutexKey,
+        'lock',
+        putRequestOptions: pro,
+      );
+      logger.shout('😎 Will handle request from ${notification.from}'
+          '; acquired mutex $mutexKey');
+    } catch (err) {
+      if (err.toString().toLowerCase().contains('immutable')) {
+        logger.shout('🤷‍♂️ Will not handle request from ${notification.from}'
+            '; did not acquire mutex $mutexKey');
+        return;
+      } else {
+        logger.shout('Will not handle; did not acquire mutex $mutexKey : $err');
+      }
+      return;
+    }
+
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
     keyAtsign = keyAtsign.replaceAll('.$nameSpace${notification.from}', '');
