@@ -47,15 +47,10 @@ Future<void> aiTalk(List<String> args) async {
   ArgParser parser = CLIBase.argsParser;
   CLIBase cli;
   try {
-    parser.addOption('toatsign',
-        abbr: 't', mandatory: true, help: 'Talk to this atSign');
-    parser.addOption('firstname',
-        abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
+    parser.addOption('toatsign', abbr: 't', mandatory: true, help: 'Talk to this atSign');
+    parser.addOption('firstname', abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
     parser.addOption('context',
-        abbr: 'c',
-        mandatory: false,
-        defaultsTo: ".",
-        help: 'Send and Store the context of the prompt');
+        abbr: 'c', mandatory: false, defaultsTo: ".", help: 'Send and Store the context of the prompt');
 
     // kludge because CLIBase default argsParse has namespace as mandatory
     if (!args.join(' ').contains(' -n ')) {
@@ -98,8 +93,7 @@ Future<void> aiTalk(List<String> args) async {
     await cli.init();
   } catch (e) {
     // Kludge to remove the '-n' mandatory notice from the parser
-    print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'),
-        '--namespace                Namespace\n'));
+    print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
     print(e);
     exit(1);
   }
@@ -126,39 +120,35 @@ Future<void> aiTalk(List<String> args) async {
   nameKey.metadata.ttl = 60 * 60 * 1000;
   // Keep name in place for an hour
   if (firstname != '') {
-    await atClient.put(nameKey, firstname,
-        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
+    await atClient.put(nameKey, firstname, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
   }
   // Remove context if not given
   nameKey.key = "context";
-  await atClient.put(nameKey, context,
-      putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
+  await atClient.put(nameKey, context, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
 
-  atClient.notificationService
-      .subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true)
-      .listen(((notification) async {
+  atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(
+      ((notification) async {
     String keyAtsign = notification.key;
+    print(notification);
     keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
     keyAtsign = keyAtsign.replaceAll('.$nameSpace${notification.from}', '');
     if (keyAtsign == 'aitalk') {
-      logger.info(
-          'aiTalk update received from ${notification.from} notification id : ${notification.id}');
+      logger.info('aiTalk update received from ${notification.from} notification id : ${notification.id}');
       var talk = notification.value!;
       // Terminal Control
       // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
       //
       spin[0] = false;
       if (hasTerminal) {
-        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') +
-            chalk.brightGreen('$talk\n'));
+        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen('$talk\n'));
       } else {
         stdout.write("$talk\n");
       }
       pipePrint('${cli.atSign}: ');
     }
   }),
-          onError: (e) => logger.severe('Notification Failed:$e'),
-          onDone: () => logger.info('Notification listener stopped'));
+      onError: (e) => logger.severe('Notification Failed:$e'),
+      onDone: () => logger.info('Notification listener stopped'));
 
   String input = "";
   String buffer = "";
@@ -191,8 +181,7 @@ Future<void> aiTalk(List<String> args) async {
 
     if (generateCommandRegEx.hasMatch(input)) {
       int length = int.parse(input.split(' ')[1]);
-      input = String.fromCharCodes(
-          Iterable.generate(length, (index) => digits.codeUnitAt(index % 10)));
+      input = String.fromCharCodes(Iterable.generate(length, (index) => digits.codeUnitAt(index % 10)));
     }
 
     if (!(input == "")) {
@@ -203,8 +192,7 @@ Future<void> aiTalk(List<String> args) async {
         hasTerminal = true;
         spin[0] = true;
         brailleSpin(spin);
-        var success = await sendNotification(
-            atClient.notificationService, key, input, logger);
+        var success = await sendNotification(atClient.notificationService, key, input, logger);
         if (success == false) {
           spin[0] = false;
           print(
@@ -218,12 +206,10 @@ Future<void> aiTalk(List<String> args) async {
 // Send file contents if stdin has no terminal
   if (!(hasTerminal)) {
     spin[0] = true;
-    var success = await sendNotification(
-        atClient.notificationService, key, buffer, logger);
+    var success = await sendNotification(atClient.notificationService, key, buffer, logger);
     if (success == false) {
       spin[0] = false;
-      print(
-          '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
+      print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
     }
   }
   while (spin[0]) {
@@ -233,8 +219,8 @@ Future<void> aiTalk(List<String> args) async {
   exit(0);
 }
 
-Future<bool> sendNotification(NotificationService notificationService,
-    AtKey key, String input, AtSignLogger logger) async {
+Future<bool> sendNotification(
+    NotificationService notificationService, AtKey key, String input, AtSignLogger logger) async {
   bool success = false;
 
   // back off retries (max 3)
@@ -242,16 +228,13 @@ Future<bool> sendNotification(NotificationService notificationService,
     try {
       NotificationResult result = await notificationService.notify(
           NotificationParams.forUpdate(key,
-              value: input,
-              notificationExpiry: Duration(seconds: 360),
-              strategy: StrategyEnum.all),
+              value: input, notificationExpiry: Duration(seconds: 360), strategy: StrategyEnum.all),
           waitForFinalDeliveryStatus: false,
           onSentToSecondary: (p0) {},
           checkForFinalDeliveryStatus: false);
       if (result.atClientException != null) {
         logger.warning(result.atClientException);
-        print(
-            '${chalk.brightRed.bold('\r\x1b[KError Sending: ')} retry number $retry of 3');
+        print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')} retry number $retry of 3');
         await Future.delayed(Duration(milliseconds: (500 * (retry))));
       } else {
         success = true;

@@ -41,7 +41,7 @@ void main(List<String> args) async {
       await ps.run();
     } catch (e) {
       print(e);
-      print(CLIBase.argsParser.usage);
+      print(CLIBase.argsParser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
       exit(1);
     }
   }, (error, stackTrace) {
