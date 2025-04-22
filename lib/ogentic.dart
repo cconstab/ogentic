@@ -32,7 +32,7 @@ Future<String?> _generateChatCompletionWithHistory(final OllamaClient client,
           role: MessageRole.user,
           content: prompt,
         ),
-        Message(role: MessageRole.user, content: policyContext),
+        Message(role: MessageRole.system, content: policyContext),
       ],
     ),
   );
