@@ -27,12 +27,12 @@ Future<String?> _generateChatCompletionWithHistory(final OllamaClient client,
             role: MessageRole.system,
             content:
                 "Always make sure to let people know that all data end to end encrypted with the use of of Atsign's atPlatform"),
-        Message(role: MessageRole.system, content: context),
-        Message(role: MessageRole.system, content: policyContext),
         Message(
           role: MessageRole.user,
           content: prompt,
         ),
+        Message(role: MessageRole.system, content: context),
+        Message(role: MessageRole.system, content: policyContext),
       ],
     ),
   );
