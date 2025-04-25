@@ -1,21 +1,34 @@
+//import 'dart:js_interop';
+
 import 'package:ollama_dart/ollama_dart.dart';
 
 Future<String?> questionLlama(
-    String prompt, String name, String context, String additionalContext) async {
+    String model, String prompt, String name, String context, String additionalContext) async {
   String? answer;
   final client = OllamaClient();
 
   //await _generateChatCompletionStream(client);
-  answer =
-      await _generateChatCompletionWithHistory(client, prompt, name, context, additionalContext);
+  answer = await _generateChatCompletionWithHistory(client, model, prompt, name, context, additionalContext);
   return (answer);
 }
 
-Future<String?> _generateChatCompletionWithHistory(final OllamaClient client,
-    String prompt, String name, String context, String policyContext) async {
+Future<bool> checkModel(String model) async {
+  // Add the delimiter 
+  model = "$model:";
+  final client = OllamaClient();
+  final ModelsResponse res = await client.listModels();
+  if (res.models == null || res.models!.toString().contains(model)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+Future<String?> _generateChatCompletionWithHistory(
+    final OllamaClient client, String model, String prompt, String name, String context, String policyContext) async {
   final generated = await client.generateChatCompletion(
     request: GenerateChatCompletionRequest(
-      model: 'llama3.2:latest',
+      model: model,
       keepAlive: -1,
       messages: [
         Message(
