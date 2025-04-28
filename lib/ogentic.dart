@@ -5,7 +5,6 @@ import 'package:ollama_dart/ollama_dart.dart';
 Future<String?> questionLlama(
     String model, String baseUrl, String prompt, String name, String context, String additionalContext) async {
   String? answer;
-  print(baseUrl);
   final client = OllamaClient(baseUrl: baseUrl);
 
   //await _generateChatCompletionStream(client);
