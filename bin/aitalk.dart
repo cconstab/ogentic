@@ -6,10 +6,11 @@ import 'dart:async';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:dfunc/dfunc.dart';
-import 'package:ogentic/common.dart';
-import 'package:ogentic/pipe_print.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
+import 'package:uuid/uuid.dart';
+import 'package:console_markdown/console_markdown.dart';
+
 
 // atPlatform packages
 import 'package:at_client/at_client.dart';
@@ -17,7 +18,8 @@ import 'package:at_utils/at_logger.dart';
 
 // Local Packages
 import 'package:ogentic/braille_spin.dart';
-import 'package:uuid/uuid.dart';
+import 'package:ogentic/common.dart';
+import 'package:ogentic/pipe_print.dart';
 
 const String digits = '0123456789';
 final RegExp generateCommandRegEx = RegExp(r'^/gen \d+$');
@@ -139,7 +141,7 @@ Future<void> aiTalk(List<String> args) async {
       //
       spin[0] = false;
       if (hasTerminal) {
-        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen('$talk\n'));
+        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen.normal('${ConsoleMarkdown.apply(talk)}\n'));
       } else {
         stdout.write("$talk\n");
       }

@@ -26,6 +26,7 @@ dependencies:
   version: ^3.0.2
   dfunc: ^0.10.0
   uuid: ^3.0.7
+  console_markdown: ^0.0.3
   # path: ^1.8.0
 
 dev_dependencies:
