@@ -3,9 +3,9 @@
 import 'package:ollama_dart/ollama_dart.dart';
 
 Future<String?> questionLlama(
-    String model, String prompt, String name, String context, String additionalContext) async {
+    String model, String baseUrl, String prompt, String name, String context, String additionalContext) async {
   String? answer;
-  final client = OllamaClient();
+  final client = OllamaClient(baseUrl: baseUrl);
 
   //await _generateChatCompletionStream(client);
   answer = await _generateChatCompletionWithHistory(client, model, prompt, name, context, additionalContext);

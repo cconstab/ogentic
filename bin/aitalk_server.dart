@@ -28,6 +28,7 @@ void main(List<String> args) async {
 
 class AITalkServer {
   late String model;
+  late String baseUrl;
   late String nameSpace;
   late AtClient atClient;
   late String policyAtsign;
@@ -55,6 +56,8 @@ class AITalkServer {
     final parser = CLIBase.argsParser;
     try {
       parser.addOption('policy', abbr: 'p', help: 'the atsign of the policy service being used');
+      parser.addOption('baseUrl',
+          abbr: 'u', help: 'the base URL of the ollama server', defaultsTo: 'http://localhost:11434/api');
       parser.addOption(
         'model',
         abbr: 'm',
@@ -64,6 +67,7 @@ class AITalkServer {
       final parsedArgs = parser.parse(args);
       nameSpace = parsedArgs['namespace'];
       model = parsedArgs['model'];
+      baseUrl = parsedArgs['baseUrl'];
       policyAtsign = parsedArgs['policy'].toString().toAtsign();
       cli = CLIBase(
         atSign: parsedArgs['atsign'],
@@ -99,9 +103,8 @@ class AITalkServer {
 
     if (await checkModel(model) == false) {
       print("$model is not available use \"ollama pull $model\" to install it");
-    exit(1);
+      exit(1);
     }
-  
 
     atClient = cli.atClient;
 
@@ -244,7 +247,7 @@ class AITalkServer {
         ..namespace = nameSpace
         ..metadata = _md;
 
-      String? answer = await questionLlama(model, talk, firstname, context, additionalContext);
+      String? answer = await questionLlama(model, baseUrl, talk, firstname, context, additionalContext);
       // String answer = 'Echoing:\n'
       //     '    atSign ${notification.from}\n'
       //     '    firstname: $firstname\n'
