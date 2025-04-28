@@ -170,7 +170,7 @@ class AITalkServer {
         ..namespace = nameSpace
         ..metadata = _md;
 
-      String firstname = '';
+      String firstname = notification.from;
       try {
         var nameAtkey = await atClient.get(nameKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
         firstname = nameAtkey.value ?? '';
