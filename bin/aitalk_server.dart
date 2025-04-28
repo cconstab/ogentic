@@ -56,7 +56,7 @@ class AITalkServer {
     final parser = CLIBase.argsParser;
     try {
       parser.addOption('policy', abbr: 'p', help: 'the atsign of the policy service being used');
-      parser.addOption('baseUrl',
+      parser.addOption('baseurl',
           abbr: 'u', help: 'the base URL of the ollama server', defaultsTo: 'http://localhost:11434/api');
       parser.addOption(
         'model',
@@ -67,7 +67,7 @@ class AITalkServer {
       final parsedArgs = parser.parse(args);
       nameSpace = parsedArgs['namespace'];
       model = parsedArgs['model'];
-      baseUrl = parsedArgs['baseUrl'];
+      baseUrl = parsedArgs['baseurl'];
       policyAtsign = parsedArgs['policy'].toString().toAtsign();
       cli = CLIBase(
         atSign: parsedArgs['atsign'],
@@ -101,7 +101,7 @@ class AITalkServer {
       exit(1);
     }
 
-    if (await checkModel(model) == false) {
+    if (await checkModel(baseUrl,model) == false) {
       print("$model is not available use \"ollama pull $model\" to install it");
       exit(1);
     }

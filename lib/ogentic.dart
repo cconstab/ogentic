@@ -5,6 +5,7 @@ import 'package:ollama_dart/ollama_dart.dart';
 Future<String?> questionLlama(
     String model, String baseUrl, String prompt, String name, String context, String additionalContext) async {
   String? answer;
+  print(baseUrl);
   final client = OllamaClient(baseUrl: baseUrl);
 
   //await _generateChatCompletionStream(client);
@@ -12,10 +13,10 @@ Future<String?> questionLlama(
   return (answer);
 }
 
-Future<bool> checkModel(String model) async {
-  // Add the delimiter 
+Future<bool> checkModel(String baseUrl,String model) async {
+  // Add the delimiter
   model = "$model:";
-  final client = OllamaClient();
+  final client = OllamaClient(baseUrl: baseUrl);
   final ModelsResponse res = await client.listModels();
   if (res.models == null || res.models!.toString().contains(model)) {
     return true;
