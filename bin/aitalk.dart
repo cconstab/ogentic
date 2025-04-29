@@ -11,7 +11,6 @@ import 'package:chalkdart/chalk.dart';
 import 'package:uuid/uuid.dart';
 import 'package:console_markdown/console_markdown.dart';
 
-
 // atPlatform packages
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
@@ -141,7 +140,8 @@ Future<void> aiTalk(List<String> args) async {
       //
       spin[0] = false;
       if (hasTerminal) {
-        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen.normal('${ConsoleMarkdown.apply(talk)}\n'));
+        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') +
+            chalk.brightGreen.normal('${ConsoleMarkdown.apply(talk)}\n'));
       } else {
         stdout.write("$talk\n");
       }
@@ -199,6 +199,16 @@ Future<void> aiTalk(List<String> args) async {
           print(
               '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
           pipePrint('${cli.atSign}: ');
+        }
+        // Time out after 20 seconds of waiting for a reply
+        int cnt = 0;
+          while (spin[0]) {
+            await Future.delayed(Duration(seconds: 1));
+            cnt++;
+            if ((cnt > 19) || !spin[0]) {
+              spin[0] = false;
+              pipePrint('\r\x1b@${cli.atSign}: ');
+            }
         }
       }
     }
