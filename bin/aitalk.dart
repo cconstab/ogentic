@@ -239,7 +239,7 @@ Future<bool> sendNotification(
     try {
       NotificationResult result = await notificationService.notify(
           NotificationParams.forUpdate(key,
-              value: input, notificationExpiry: Duration(seconds: 360), strategy: StrategyEnum.all),
+              value: input, notificationExpiry: Duration(seconds: 20), strategy: StrategyEnum.all),
           waitForFinalDeliveryStatus: false,
           onSentToSecondary: (p0) {},
           checkForFinalDeliveryStatus: false);
