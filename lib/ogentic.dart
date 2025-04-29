@@ -1,20 +1,22 @@
-//import 'dart:js_interop';
 
 import 'package:ollama_dart/ollama_dart.dart';
 
-Future<String?> questionLlama(
-    OllamaClient client, String model, String prompt, String name, String context, String additionalContext) async {
+Future<String?> questionLlama(OllamaClient client, String model, String prompt,
+    String name, String context, String additionalContext) async {
   String? answer;
   //await _generateChatCompletionStream(client);
-  answer = await _generateChatCompletionWithHistory(client, model, prompt, name, context, additionalContext);
+  answer = await _generateChatCompletionWithHistory(
+      client, model, prompt, name, context, additionalContext);
   return (answer);
 }
 
 Future<bool> checkModel(OllamaClient client, String model) async {
   // Add the delimiter
-  model = "$model:";
   final ModelsResponse res = await client.listModels();
-  if (res.models == null || res.models!.toString().contains(model)) {
+  if (res.models == null || res.models!.toString().contains('$model:')) {
+    // load model with a good question
+     _generateChatCompletionWithHistory(client, model,
+        'what is the meaning of life', '', '', "");
     return true;
   } else {
     return false;
@@ -22,7 +24,12 @@ Future<bool> checkModel(OllamaClient client, String model) async {
 }
 
 Future<String?> _generateChatCompletionWithHistory(
-    final OllamaClient client, String model, String prompt, String name, String context, String policyContext) async {
+    final OllamaClient client,
+    String model,
+    String prompt,
+    String name,
+    String context,
+    String policyContext) async {
   final generated = await client.generateChatCompletion(
     request: GenerateChatCompletionRequest(
       model: model,
