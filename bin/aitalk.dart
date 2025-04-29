@@ -141,7 +141,7 @@ Future<void> aiTalk(List<String> args) async {
       //
       spin[0] = false;
       if (hasTerminal) {
-        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.brightGreen.normal('${ConsoleMarkdown.apply(talk)}\n'));
+        pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.normal('${ConsoleMarkdown.apply(talk)}\n'));
       } else {
         stdout.write("$talk\n");
       }
@@ -229,7 +229,7 @@ Future<bool> sendNotification(
     try {
       NotificationResult result = await notificationService.notify(
           NotificationParams.forUpdate(key,
-              value: input, notificationExpiry: Duration(seconds: 360), strategy: StrategyEnum.all),
+              value: input, notificationExpiry: Duration(seconds: 20), strategy: StrategyEnum.all),
           waitForFinalDeliveryStatus: false,
           onSentToSecondary: (p0) {},
           checkForFinalDeliveryStatus: false);
