@@ -3,6 +3,7 @@ import 'dart:io';
 
 // external packages
 import 'package:at_policy/at_policy.dart';
+import 'package:ollama_dart/ollama_dart.dart';
 import 'package:ogentic/common.dart';
 import 'package:ogentic/server_print.dart';
 import 'package:logging/src/level.dart';
@@ -27,11 +28,13 @@ void main(List<String> args) async {
 }
 
 class AITalkServer {
+  late OllamaClient client;
   late String model;
   late String baseUrl;
   late String nameSpace;
   late AtClient atClient;
   late String policyAtsign;
+
   late CLIBase cli;
 
   final logger = AtSignLogger(' aiTalk server ');
@@ -101,7 +104,9 @@ class AITalkServer {
       exit(1);
     }
 
-    if (await checkModel(baseUrl,model) == false) {
+   client = OllamaClient(baseUrl: baseUrl);
+
+    if (await checkModel(client, model) == false) {
       print("$model is not available use \"ollama pull $model\" to install it");
       exit(1);
     }
@@ -247,7 +252,7 @@ class AITalkServer {
         ..namespace = nameSpace
         ..metadata = _md;
 
-      String? answer = await questionLlama(model, baseUrl, talk, firstname, context, additionalContext);
+      String? answer = await questionLlama(client, model, talk, firstname, context, additionalContext);
       // String answer = 'Echoing:\n'
       //     '    atSign ${notification.from}\n'
       //     '    firstname: $firstname\n'
