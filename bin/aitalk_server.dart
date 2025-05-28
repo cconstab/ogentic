@@ -88,7 +88,7 @@ class AITalkServer {
         verbose: parsedArgs['verbose'],
         syncDisabled: parsedArgs['never-sync'],
         maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
-        passPhrase: parsedArgs['passPhrase'],
+        passPhrase: parsedArgs['pass-phrase'],
       );
 
       if (parsedArgs['policy'] != null) {
