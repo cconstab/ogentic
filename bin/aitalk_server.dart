@@ -68,7 +68,7 @@ class AITalkServer {
         defaultsTo: 'llama3.2',
       );
       final parsedArgs = parser.parse(args);
-      nameSpace = parsedArgs['namespace'];
+      nameSpace = "${parsedArgs['namespace']}.ogentic";
       model = parsedArgs['model'];
       baseUrl = parsedArgs['baseurl'];
       policyAtsign = parsedArgs['policy'].toString().toAtsign();
@@ -229,7 +229,7 @@ class AITalkServer {
             additionalContext = pd.info['additionalContext'];
             print(chalk.purple(
               'Fetched additional context'
-              ' for ${notification.from}',
+              ' for ${notification.from}: $additionalContext',
             ));
           } else {
             print(chalk.purple(
