@@ -29,7 +29,7 @@ void main(List<String> args) async {
       final atClient = cli.atClient;
 
       PolicyService ps = PolicyService(
-        baseNamespace: atClient.getPreferences()!.namespace!,
+        baseNamespace: '${atClient.getPreferences()!.namespace!}.ogentic',
         policyRequestNamespace: Consts.policySubNameSpace,
         loggingAtsign: atClient.getCurrentAtSign()!,
         allowList: {},

@@ -65,7 +65,8 @@ Future<void> aiTalk(List<String> args) async {
       firstname = parsedArgs['firstname'];
     }
 
-    nameSpace = parsedArgs['namespace'];
+    nameSpace = "${parsedArgs['namespace']}.ogentic";
+  
 
     // Limit context to 255 Characters
     context = parsedArgs['context'];
@@ -202,13 +203,13 @@ Future<void> aiTalk(List<String> args) async {
         }
         // Time out after 20 seconds of waiting for a reply
         int cnt = 0;
-          while (spin[0]) {
-            await Future.delayed(Duration(seconds: 1));
-            cnt++;
-            if ((cnt > 19) || !spin[0]) {
-              spin[0] = false;
-              pipePrint('\r\x1b@${cli.atSign}: ');
-            }
+        while (spin[0]) {
+          await Future.delayed(Duration(seconds: 1));
+          cnt++;
+          if ((cnt > 19) || !spin[0]) {
+            spin[0] = false;
+            pipePrint('\r\x1b@${cli.atSign}: ');
+          }
         }
       }
     }
