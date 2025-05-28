@@ -6,10 +6,10 @@ import 'dart:async';
 import 'package:args/args.dart';
 import 'package:at_cli_commons/at_cli_commons.dart';
 import 'package:dfunc/dfunc.dart';
-import 'package:ogentic/common.dart';
-import 'package:ogentic/pipe_print.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
+import 'package:uuid/uuid.dart';
+import 'package:console_markdown/console_markdown.dart';
 
 // atPlatform packages
 import 'package:at_client/at_client.dart';
@@ -17,7 +17,8 @@ import 'package:at_utils/at_logger.dart';
 
 // Local Packages
 import 'package:ogentic/braille_spin.dart';
-import 'package:uuid/uuid.dart';
+import 'package:ogentic/common.dart';
+import 'package:ogentic/pipe_print.dart';
 
 const String digits = '0123456789';
 final RegExp generateCommandRegEx = RegExp(r'^/gen \d+$');
@@ -38,61 +39,66 @@ Future<void> aiTalk(List<String> args) async {
   String context = '';
   String firstname = '';
   String nameSpace;
+  String toAtsign;
   AtSignLogger.defaultLoggingHandler = AtSignLogger.stdErrLoggingHandler;
   final AtSignLogger logger = AtSignLogger(' aiTalk ');
   logger.hierarchicalLoggingEnabled = true;
   logger.logger.level = Level.SHOUT;
 
   ArgParser parser = CLIBase.argsParser;
-  parser.addOption('toatsign',
-      abbr: 't', mandatory: true, help: 'Talk to this atSign');
-  parser.addOption('firstname',
-      abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
-  parser.addOption('context',
-      abbr: 'c',
-      mandatory: false,
-      help: 'Send and Store the context of the prompt');
+  CLIBase cli;
+  try {
+    parser.addOption('toatsign', abbr: 't', mandatory: true, help: 'Talk to this atSign');
+    parser.addOption('firstname', abbr: 'f', mandatory: false, help: 'Send and Store your firstname');
+    parser.addOption('context',
+        abbr: 'c', mandatory: false, defaultsTo: ".", help: 'Send and Store the context of the prompt');
 
-  // kludge because CLIBase default argsParse has namespace as mandatory
-  if (!args.join(' ').contains(' -n ')) {
-    args = List.from(args)..addAll(['-n', Consts.defaultNameSpace]);
-  }
+    // kludge because CLIBase default argsParse has namespace as mandatory
+    if (!args.join(' ').contains(' -n ')) {
+      args = List.from(args)..addAll(['-n', Consts.defaultNameSpace]);
+    }
 
-  final parsedArgs = parser.parse(args);
-  String toAtsign = parsedArgs['toatsign'];
+    final parsedArgs = parser.parse(args);
+    toAtsign = parsedArgs['toatsign'];
 
-  if (parsedArgs['firstname'] != null) {
-    firstname = parsedArgs['firstname'];
-  }
+    if (parsedArgs['firstname'] != null) {
+      firstname = parsedArgs['firstname'];
+    }
 
-  nameSpace = parsedArgs['namespace'];
+    nameSpace = "${parsedArgs['namespace']}.ogentic";
+  
 
-  if (parsedArgs['context'] != null) {
+    // Limit context to 255 Characters
     context = parsedArgs['context'];
+    if (context.isEmpty) context = ".";
     var limit255 = limit(255);
     context = limit255(context);
+
+    cli = CLIBase(
+      atSign: parsedArgs['atsign'],
+      atKeysFilePath: parsedArgs['key-file'],
+      nameSpace: parsedArgs['namespace'],
+      rootDomain: parsedArgs['root-domain'],
+      homeDir: getHomeDirectory(),
+      storageDir: parsedArgs['storage-dir'] ??
+          standardAtClientStoragePath(
+            baseDir: getHomeDirectory()!,
+            atSign: parsedArgs['atsign'],
+            progName: 'ai_talk',
+            uniqueID: Uuid().v4(), // many clients
+          ),
+      verbose: parsedArgs['verbose'],
+      syncDisabled: parsedArgs['never-sync'],
+      maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
+      passPhrase: parsedArgs['passPhrase'],
+    );
+    await cli.init();
+  } catch (e) {
+    // Kludge to remove the '-n' mandatory notice from the parser
+    print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
+    print(e);
+    exit(1);
   }
-
-  final cli = CLIBase(
-    atSign: parsedArgs['atsign'],
-    atKeysFilePath: parsedArgs['key-file'],
-    nameSpace: parsedArgs['namespace'],
-    rootDomain: parsedArgs['root-domain'],
-    homeDir: getHomeDirectory(),
-    storageDir: parsedArgs['storage-dir'] ??
-        standardAtClientStoragePath(
-          baseDir: getHomeDirectory()!,
-          atSign: parsedArgs['atsign'],
-          progName: 'ai_talk',
-          uniqueID: Uuid().v4(), // many clients
-        ),
-    verbose: parsedArgs['verbose'],
-    syncDisabled: parsedArgs['never-sync'],
-    maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
-    passPhrase: parsedArgs['passPhrase'],
-  );
-
-  await cli.init();
   final atClient = cli.atClient;
 
   bool hasTerminal = true;
@@ -114,26 +120,21 @@ Future<void> aiTalk(List<String> args) async {
   nameKey.key = "firstname";
   // Auto cleanup after an hour.
   nameKey.metadata.ttl = 60 * 60 * 1000;
+  // Keep name in place for an hour
   if (firstname != '') {
-    await atClient.put(nameKey, firstname,
-        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
+    await atClient.put(nameKey, firstname, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
   }
-
+  // Remove context if not given
   nameKey.key = "context";
-  if (context != '') {
-    await atClient.put(nameKey, context,
-        putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
-  }
+  await atClient.put(nameKey, context, putRequestOptions: PutRequestOptions()..useRemoteAtServer = true);
 
-  atClient.notificationService
-      .subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true)
-      .listen(((notification) async {
+  atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(
+      ((notification) async {
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
     keyAtsign = keyAtsign.replaceAll('.$nameSpace${notification.from}', '');
     if (keyAtsign == 'aitalk') {
-      logger.info(
-          'aiTalk update received from ${notification.from} notification id : ${notification.id}');
+      logger.info('aiTalk update received from ${notification.from} notification id : ${notification.id}');
       var talk = notification.value!;
       // Terminal Control
       // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
@@ -141,15 +142,15 @@ Future<void> aiTalk(List<String> args) async {
       spin[0] = false;
       if (hasTerminal) {
         pipePrint(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') +
-            chalk.brightGreen('$talk\n'));
+            chalk.brightGreen.normal('${ConsoleMarkdown.apply(talk)}\n'));
       } else {
         stdout.write("$talk\n");
       }
       pipePrint('${cli.atSign}: ');
     }
   }),
-          onError: (e) => logger.severe('Notification Failed:$e'),
-          onDone: () => logger.info('Notification listener stopped'));
+      onError: (e) => logger.severe('Notification Failed:$e'),
+      onDone: () => logger.info('Notification listener stopped'));
 
   String input = "";
   String buffer = "";
@@ -182,8 +183,7 @@ Future<void> aiTalk(List<String> args) async {
 
     if (generateCommandRegEx.hasMatch(input)) {
       int length = int.parse(input.split(' ')[1]);
-      input = String.fromCharCodes(
-          Iterable.generate(length, (index) => digits.codeUnitAt(index % 10)));
+      input = String.fromCharCodes(Iterable.generate(length, (index) => digits.codeUnitAt(index % 10)));
     }
 
     if (!(input == "")) {
@@ -194,13 +194,22 @@ Future<void> aiTalk(List<String> args) async {
         hasTerminal = true;
         spin[0] = true;
         brailleSpin(spin);
-        var success = await sendNotification(
-            atClient.notificationService, key, input, logger);
+        var success = await sendNotification(atClient.notificationService, key, input, logger);
         if (success == false) {
           spin[0] = false;
           print(
               '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
           pipePrint('${cli.atSign}: ');
+        }
+        // Time out after 20 seconds of waiting for a reply
+        int cnt = 0;
+        while (spin[0]) {
+          await Future.delayed(Duration(seconds: 1));
+          cnt++;
+          if ((cnt > 19) || !spin[0]) {
+            spin[0] = false;
+            pipePrint('\r\x1b@${cli.atSign}: ');
+          }
         }
       }
     }
@@ -209,12 +218,10 @@ Future<void> aiTalk(List<String> args) async {
 // Send file contents if stdin has no terminal
   if (!(hasTerminal)) {
     spin[0] = true;
-    var success = await sendNotification(
-        atClient.notificationService, key, buffer, logger);
+    var success = await sendNotification(atClient.notificationService, key, buffer, logger);
     if (success == false) {
       spin[0] = false;
-      print(
-          '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
+      print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$input" to $toAtsign - unable to reach the Internet !');
     }
   }
   while (spin[0]) {
@@ -224,8 +231,8 @@ Future<void> aiTalk(List<String> args) async {
   exit(0);
 }
 
-Future<bool> sendNotification(NotificationService notificationService,
-    AtKey key, String input, AtSignLogger logger) async {
+Future<bool> sendNotification(
+    NotificationService notificationService, AtKey key, String input, AtSignLogger logger) async {
   bool success = false;
 
   // back off retries (max 3)
@@ -233,16 +240,13 @@ Future<bool> sendNotification(NotificationService notificationService,
     try {
       NotificationResult result = await notificationService.notify(
           NotificationParams.forUpdate(key,
-              value: input,
-              notificationExpiry: Duration(seconds: 360),
-              strategy: StrategyEnum.all),
+              value: input, notificationExpiry: Duration(seconds: 20), strategy: StrategyEnum.all),
           waitForFinalDeliveryStatus: false,
           onSentToSecondary: (p0) {},
           checkForFinalDeliveryStatus: false);
       if (result.atClientException != null) {
         logger.warning(result.atClientException);
-        print(
-            '${chalk.brightRed.bold('\r\x1b[KError Sending: ')} retry number $retry of 3');
+        print('${chalk.brightRed.bold('\r\x1b[KError Sending: ')} retry number $retry of 3');
         await Future.delayed(Duration(milliseconds: (500 * (retry))));
       } else {
         success = true;

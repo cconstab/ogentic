@@ -3,16 +3,16 @@ import 'dart:io';
 
 Future<bool> brailleSpin(List<bool> spin) async {
   final frames = [
-    '⠋',
-    '⠙',
-    '⠹',
-    '⠸',
-    '⠼',
-    '⠴',
-    '⠦',
-    '⠧',
-    '⠇',
-    '⠏'
+    '⠋ ',
+    '⠙ ',
+    '⠹ ',
+    '⠸ ',
+    '⠼ ',
+    '⠴ ',
+    '⠦ ',
+    '⠧ ',
+    '⠇ ',
+    '⠏ '
   ]; //braille spinner
   print("\x1b[2K");
   print('\x1b[2A');

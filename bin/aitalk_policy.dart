@@ -29,7 +29,7 @@ void main(List<String> args) async {
       final atClient = cli.atClient;
 
       PolicyService ps = PolicyService(
-        baseNamespace: atClient.getPreferences()!.namespace!,
+        baseNamespace: '${atClient.getPreferences()!.namespace!}.ogentic',
         policyRequestNamespace: Consts.policySubNameSpace,
         loggingAtsign: atClient.getCurrentAtSign()!,
         allowList: {},
@@ -41,7 +41,7 @@ void main(List<String> args) async {
       await ps.run();
     } catch (e) {
       print(e);
-      print(CLIBase.argsParser.usage);
+      print(CLIBase.argsParser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
       exit(1);
     }
   }, (error, stackTrace) {
