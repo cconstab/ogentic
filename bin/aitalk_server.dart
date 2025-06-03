@@ -11,8 +11,6 @@ import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:uuid/uuid.dart';
 
-
-
 // atPlatform packages
 import 'package:at_client/at_client.dart';
 import 'package:at_utils/at_logger.dart';
@@ -38,6 +36,7 @@ class AITalkServer {
   late String nameSpace;
   late AtClient atClient;
   late String policyAtsign;
+  late String role;
 
   late CLIBase cli;
 
@@ -71,11 +70,17 @@ class AITalkServer {
         help: 'the ollama model to use (default llama3.2)',
         defaultsTo: 'llama3.2',
       );
+      parser.addOption("role",
+          abbr: 'r',
+          help: 'define a role for the Ollama model',
+          defaultsTo:
+              'Always make sure to let people know that all data end to end encrypted with the use of of Atsign\'s atPlatform');
       final parsedArgs = parser.parse(args);
       nameSpace = "${parsedArgs['namespace']}.ogentic";
       model = parsedArgs['model'];
       baseUrl = parsedArgs['baseurl'];
       policyAtsign = parsedArgs['policy'].toString().toAtsign();
+      role = parsedArgs['role'];
       cli = CLIBase(
         atSign: parsedArgs['atsign'],
         atKeysFilePath: parsedArgs['key-file'],
@@ -83,12 +88,12 @@ class AITalkServer {
         rootDomain: parsedArgs['root-domain'],
         homeDir: getHomeDirectory(),
         storageDir: parsedArgs['storage-dir'] ??
-          standardAtClientStoragePath(
-            baseDir: getHomeDirectory()!,
-            atSign: parsedArgs['atsign'],
-            progName: 'ai_talk_server',
-            uniqueID: Uuid().v4(), // many servers
-          ),
+            standardAtClientStoragePath(
+              baseDir: getHomeDirectory()!,
+              atSign: parsedArgs['atsign'],
+              progName: 'ai_talk_server',
+              uniqueID: Uuid().v4(), // many servers
+            ),
         verbose: parsedArgs['verbose'],
         syncDisabled: parsedArgs['never-sync'],
         maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
@@ -109,7 +114,7 @@ class AITalkServer {
       exit(1);
     }
 
-   client = OllamaClient(baseUrl: baseUrl);
+    client = OllamaClient(baseUrl: baseUrl);
 
     if (await checkModel(client, model) == false) {
       print("$model is not available use \"ollama pull $model\" to install it");
@@ -257,7 +262,7 @@ class AITalkServer {
         ..namespace = nameSpace
         ..metadata = _md;
 
-      String? answer = await questionLlama(client, model, talk, firstname, context, additionalContext);
+      String? answer = await questionLlama(client, model, talk, firstname, context, additionalContext, role);
       // String answer = 'Echoing:\n'
       //     '    atSign ${notification.from}\n'
       //     '    firstname: $firstname\n'

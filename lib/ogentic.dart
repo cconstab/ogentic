@@ -2,11 +2,11 @@
 import 'package:ollama_dart/ollama_dart.dart';
 
 Future<String?> questionLlama(OllamaClient client, String model, String prompt,
-    String name, String context, String additionalContext) async {
+    String name, String context, String additionalContext, String role) async {
   String? answer;
   //await _generateChatCompletionStream(client);
   answer = await _generateChatCompletionWithHistory(
-      client, model, prompt, name, context, additionalContext);
+      client, model, prompt, name, context, additionalContext, role);
   return (answer);
 }
 
@@ -16,7 +16,7 @@ Future<bool> checkModel(OllamaClient client, String model) async {
   if (res.models == null || res.models!.toString().contains('$model:')) {
     // load model with a good question
      _generateChatCompletionWithHistory(client, model,
-        'what is the meaning of life', '', '', "");
+        'what is the meaning of life', '', '', "","");
     return true;
   } else {
     return false;
@@ -29,7 +29,8 @@ Future<String?> _generateChatCompletionWithHistory(
     String prompt,
     String name,
     String context,
-    String policyContext) async {
+    String policyContext,
+    String role) async {
   final generated = await client.generateChatCompletion(
     request: GenerateChatCompletionRequest(
       model: model,
@@ -43,7 +44,7 @@ Future<String?> _generateChatCompletionWithHistory(
         Message(
             role: MessageRole.system,
             content:
-                "Always make sure to let people know that all data end to end encrypted with the use of of Atsign's atPlatform"),
+                role),
         Message(role: MessageRole.system, content: context),
         Message(role: MessageRole.system, content: policyContext),
         Message(
