@@ -6,9 +6,11 @@ import 'package:at_policy/at_policy.dart';
 import 'package:ollama_dart/ollama_dart.dart';
 import 'package:ogentic/common.dart';
 import 'package:ogentic/server_print.dart';
+import 'package:ogentic/src/print_version.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:uuid/uuid.dart';
+
 
 
 // atPlatform packages
@@ -100,6 +102,7 @@ class AITalkServer {
       }
       await cli.init();
     } catch (e) {
+      printVersion();
       // Overide the normal -n message
       print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
       print(e);

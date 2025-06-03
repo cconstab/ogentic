@@ -19,6 +19,7 @@ import 'package:at_utils/at_logger.dart';
 import 'package:ogentic/braille_spin.dart';
 import 'package:ogentic/common.dart';
 import 'package:ogentic/pipe_print.dart';
+import 'package:ogentic/src/print_version.dart';
 
 const String digits = '0123456789';
 final RegExp generateCommandRegEx = RegExp(r'^/gen \d+$');
@@ -66,7 +67,6 @@ Future<void> aiTalk(List<String> args) async {
     }
 
     nameSpace = "${parsedArgs['namespace']}.ogentic";
-  
 
     // Limit context to 255 Characters
     context = parsedArgs['context'];
@@ -94,6 +94,7 @@ Future<void> aiTalk(List<String> args) async {
     );
     await cli.init();
   } catch (e) {
+    printVersion();
     // Overide the normal -n message
     print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
     print(e);

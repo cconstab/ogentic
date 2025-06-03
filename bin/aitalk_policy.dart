@@ -6,12 +6,11 @@ import 'package:at_client/at_client.dart';
 import 'package:at_policy/at_policy.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:ogentic/common.dart';
+import 'package:ogentic/src/print_version.dart';
 import 'package:uuid/uuid.dart';
-
 
 void main(List<String> args) async {
   await runZonedGuarded(() async {
-
     try {
       if (!args.join(' ').contains(' -n ')) {
         args = List.from(args)..addAll(['-n', Consts.defaultNameSpace]);
@@ -35,12 +34,12 @@ void main(List<String> args) async {
         rootDomain: parsedArgs['root-domain'],
         homeDir: getHomeDirectory(),
         storageDir: parsedArgs['storage-dir'] ??
-          standardAtClientStoragePath(
-            baseDir: getHomeDirectory()!,
-            atSign: parsedArgs['atsign'],
-            progName: 'ai_talk_policy',
-            uniqueID: Uuid().v4(), // many servers
-          ),
+            standardAtClientStoragePath(
+              baseDir: getHomeDirectory()!,
+              atSign: parsedArgs['atsign'],
+              progName: 'ai_talk_policy',
+              uniqueID: Uuid().v4(), // many servers
+            ),
         verbose: parsedArgs['verbose'],
         syncDisabled: parsedArgs['never-sync'],
         maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
@@ -61,9 +60,11 @@ void main(List<String> args) async {
 
       await ps.run();
     } catch (e) {
+      printVersion();
       print(e);
       // Overide the normal -n message
-      print(CLIBase.argsParser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
+      print(CLIBase.argsParser.usage
+          .replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
       exit(1);
     }
   }, (error, stackTrace) {
@@ -92,8 +93,7 @@ class DemoPolicyRequestHandler implements PolicyRequestHandler {
 
       String additionalContext = line.substring(line.indexOf('\t') + 1).trim();
 
-      List<String> atSigns =
-          line.substring(0, line.indexOf('\t')).trim().split(',');
+      List<String> atSigns = line.substring(0, line.indexOf('\t')).trim().split(',');
       for (String atSign in atSigns) {
         atSign = atSign.toAtsign();
         policies[atSign] = additionalContext;
@@ -118,9 +118,7 @@ class DemoPolicyRequestHandler implements PolicyRequestHandler {
             ' for policy intent ${intent.intent}'
             ' for client atSign ${req.clientAtsign}',
         policyDetails: [
-          PolicyDetail(
-              intent: intent.intent,
-              info: {'additionalContext': policies[req.clientAtsign]}),
+          PolicyDetail(intent: intent.intent, info: {'additionalContext': policies[req.clientAtsign]}),
         ],
       );
     } else {
