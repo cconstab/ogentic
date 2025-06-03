@@ -6,9 +6,12 @@ import 'package:at_client/at_client.dart';
 import 'package:at_policy/at_policy.dart';
 import 'package:chalkdart/chalk.dart';
 import 'package:ogentic/common.dart';
+import 'package:uuid/uuid.dart';
+
 
 void main(List<String> args) async {
   await runZonedGuarded(() async {
+
     try {
       if (!args.join(' ').contains(' -n ')) {
         args = List.from(args)..addAll(['-n', Consts.defaultNameSpace]);
@@ -25,7 +28,25 @@ void main(List<String> args) async {
             '@atsign,@atsign,@atsign <tab> Additional context info goes here',
       );
       final parsedArgs = parser.parse(args);
-      final cli = await CLIBase.fromCommandLineArgs(args, parser: parser);
+      final cli = CLIBase(
+        atSign: parsedArgs['atsign'],
+        atKeysFilePath: parsedArgs['key-file'],
+        nameSpace: parsedArgs['namespace'],
+        rootDomain: parsedArgs['root-domain'],
+        homeDir: getHomeDirectory(),
+        storageDir: parsedArgs['storage-dir'] ??
+          standardAtClientStoragePath(
+            baseDir: getHomeDirectory()!,
+            atSign: parsedArgs['atsign'],
+            progName: 'ai_talk_policy',
+            uniqueID: Uuid().v4(), // many servers
+          ),
+        verbose: parsedArgs['verbose'],
+        syncDisabled: parsedArgs['never-sync'],
+        maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
+        passPhrase: parsedArgs['pass-phrase'],
+      );
+      await cli.init();
       final atClient = cli.atClient;
 
       PolicyService ps = PolicyService(
@@ -41,6 +62,7 @@ void main(List<String> args) async {
       await ps.run();
     } catch (e) {
       print(e);
+      // Overide the normal -n message
       print(CLIBase.argsParser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
       exit(1);
     }

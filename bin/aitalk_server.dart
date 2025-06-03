@@ -8,6 +8,8 @@ import 'package:ogentic/common.dart';
 import 'package:ogentic/server_print.dart';
 import 'package:logging/src/level.dart';
 import 'package:chalkdart/chalk.dart';
+import 'package:uuid/uuid.dart';
+
 
 // atPlatform packages
 import 'package:at_client/at_client.dart';
@@ -79,12 +81,12 @@ class AITalkServer {
         rootDomain: parsedArgs['root-domain'],
         homeDir: getHomeDirectory(),
         storageDir: parsedArgs['storage-dir'] ??
-            standardAtClientStoragePath(
-              baseDir: getHomeDirectory()!,
-              atSign: parsedArgs['atsign'],
-              progName: 'ai_talk',
-              uniqueID: 'singleton', // only one server
-            ),
+          standardAtClientStoragePath(
+            baseDir: getHomeDirectory()!,
+            atSign: parsedArgs['atsign'],
+            progName: 'ai_talk_server',
+            uniqueID: Uuid().v4(), // many servers
+          ),
         verbose: parsedArgs['verbose'],
         syncDisabled: parsedArgs['never-sync'],
         maxConnectAttempts: int.parse(parsedArgs['max-connect-attempts']),
@@ -98,7 +100,7 @@ class AITalkServer {
       }
       await cli.init();
     } catch (e) {
-      // Kludge to remove the '-n' mandatory notice from the parser
+      // Overide the normal -n message
       print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
       print(e);
       exit(1);

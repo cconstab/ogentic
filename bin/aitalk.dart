@@ -94,7 +94,7 @@ Future<void> aiTalk(List<String> args) async {
     );
     await cli.init();
   } catch (e) {
-    // Kludge to remove the '-n' mandatory notice from the parser
+    // Overide the normal -n message
     print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
     print(e);
     exit(1);
