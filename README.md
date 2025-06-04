@@ -10,7 +10,7 @@ Unzip the archive and reun a Terminal commandline change directory to the downlo
 
 If you have not activated your atSign (made your personal management keys) run.
 
-./at_actiavte -a "@<YOUR ATSIGN"
+./at_actiavte -a "@<YOUR ATSIGN>"
 
 This will send you an email with a OTP password, enter that into the terminal. This will cut your manager keys which are very important NOT to loose, the program will tell you where they are, please make a backup and store offline safely too!
 
