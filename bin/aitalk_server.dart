@@ -284,7 +284,7 @@ class AITalkServer {
       //     '    talk: $talk';
       serverPrint('${cli.atSign}: ');
       print(chalk.lightBlue(answer));
-
+      print(key.toString());
       var success =
           sendNotification(atClient.notificationService, key, answer!, logger);
       if (!await success) {
