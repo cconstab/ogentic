@@ -61,9 +61,12 @@ class AITalkServer {
     }
     final parser = CLIBase.argsParser;
     try {
-      parser.addOption('policy', abbr: 'p', help: 'the atsign of the policy service being used');
+      parser.addOption('policy',
+          abbr: 'p', help: 'the atsign of the policy service being used');
       parser.addOption('baseurl',
-          abbr: 'u', help: 'the base URL of the ollama server', defaultsTo: 'http://localhost:11434/api');
+          abbr: 'u',
+          help: 'the base URL of the ollama server',
+          defaultsTo: 'http://localhost:11434/api');
       parser.addOption(
         'model',
         abbr: 'm',
@@ -76,7 +79,7 @@ class AITalkServer {
           defaultsTo:
               'Always make sure to let people know that all data end to end encrypted with the use of of Atsign\'s atPlatform');
       final parsedArgs = parser.parse(args);
-      nameSpace = "${parsedArgs['namespace']}.ogentic";
+      nameSpace = "${parsedArgs['namespace']}.attalk";
       model = parsedArgs['model'];
       baseUrl = parsedArgs['baseurl'];
       policyAtsign = parsedArgs['policy'].toString().toAtsign();
@@ -109,7 +112,8 @@ class AITalkServer {
     } catch (e) {
       printVersion();
       // Overide the normal -n message
-      print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'), '--namespace                Namespace\n'));
+      print(parser.usage.replaceAll(RegExp('--namespace.*(mandatory).*\n'),
+          '--namespace                Namespace\n'));
       print(e);
       exit(1);
     }
@@ -132,9 +136,11 @@ class AITalkServer {
           serverAtsign: policyAtsign);
     }
 
-    atClient.notificationService.subscribe(regex: 'aitalk.$nameSpace@', shouldDecrypt: true).listen(requestHandler,
-        onError: (e) => logger.severe('Notification Failed:$e'),
-        onDone: () => logger.info('Notification listener stopped'));
+    atClient.notificationService
+        .subscribe(regex: 'message.$nameSpace@', shouldDecrypt: true)
+        .listen(requestHandler,
+            onError: (e) => logger.severe('Notification Failed:$e'),
+            onDone: () => logger.info('Notification listener stopped'));
   }
 
   Future<void> requestHandler(AtNotification notification) async {
@@ -170,15 +176,16 @@ class AITalkServer {
     String keyAtsign = notification.key;
     keyAtsign = keyAtsign.replaceAll('${notification.to}:', '');
     keyAtsign = keyAtsign.replaceAll('.$nameSpace${notification.from}', '');
-
-    if (keyAtsign == 'aitalk') {
-      logger.info('aiTalk update received from ${notification.from} notification id : ${notification.id}');
+    if (keyAtsign == 'message') {
+      logger.info(
+          'aiTalk update received from ${notification.from} notification id : ${notification.id}');
       var talk = notification.value!;
 
       // Terminal Control
       // '\r\x1b[K' is used to set the cursor back to the beginning of the line then deletes to the end of line
       //
-      print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') + chalk.lightGreen(talk));
+      print(chalk.brightGreen.bold('\r\x1b[K${notification.from}: ') +
+          chalk.lightGreen(talk));
 
       var nameKey = AtKey()
         ..key = "firstname"
@@ -189,7 +196,8 @@ class AITalkServer {
 
       String firstname = notification.from;
       try {
-        var nameAtkey = await atClient.get(nameKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+        var nameAtkey = await atClient.get(nameKey,
+            getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
         firstname = nameAtkey.value ?? '';
         firstname = firstname.split(" ").elementAt(0);
         if (firstname.isEmpty) firstname = notification.from;
@@ -197,7 +205,8 @@ class AITalkServer {
         logger.info('Notification no value found for: FirstName');
       }
 
-      print(chalk.brightBlue('\r\x1b[KFirstname: ') + chalk.lightBlue(firstname));
+      print(
+          chalk.brightBlue('\r\x1b[KFirstname: ') + chalk.lightBlue(firstname));
 
       String context = '';
       var contextKey = AtKey()
@@ -207,8 +216,8 @@ class AITalkServer {
         ..namespace = nameSpace
         ..metadata = _md;
       try {
-        var contextAtkey =
-            await atClient.get(contextKey, getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
+        var contextAtkey = await atClient.get(contextKey,
+            getRequestOptions: GetRequestOptions()..useRemoteAtServer = true);
         context = contextAtkey.value;
       } catch (e) {
         logger.info('Notification no value found for: Context');
@@ -232,7 +241,9 @@ class AITalkServer {
 
         additionalContext = defaultAdditionalContext;
         try {
-          Map<String, dynamic> rpcResponse = await _policyClient!.call(polReq.toJson()).timeout(Duration(seconds: 5));
+          Map<String, dynamic> rpcResponse = await _policyClient!
+              .call(polReq.toJson())
+              .timeout(Duration(seconds: 5));
           PolicyResponse response = PolicyResponse.fromJson(rpcResponse);
           PolicyDetail? pd = response.infoForIntent(Consts.contextIntent);
           if (pd != null && pd.info['additionalContext'] != null) {
@@ -249,20 +260,22 @@ class AITalkServer {
             ));
           }
         } on TimeoutException {
-          stderr.writeln(chalk.brightRed('timed out waiting for policy service response'));
+          stderr.writeln(
+              chalk.brightRed('timed out waiting for policy service response'));
         } catch (e) {
           stderr.writeln(chalk.brightRed(e));
         }
       }
 
       var key = AtKey()
-        ..key = 'aitalk'
+        ..key = 'message'
         ..sharedBy = cli.atSign
         ..sharedWith = notification.from
         ..namespace = nameSpace
         ..metadata = _md;
 
-      String? answer = await questionLlama(client, model, talk, firstname, context, additionalContext, role);
+      String? answer = await questionLlama(
+          client, model, talk, firstname, context, additionalContext, role);
       // String answer = 'Echoing:\n'
       //     '    atSign ${notification.from}\n'
       //     '    firstname: $firstname\n'
@@ -272,7 +285,8 @@ class AITalkServer {
       serverPrint('${cli.atSign}: ');
       print(chalk.lightBlue(answer));
 
-      var success = sendNotification(atClient.notificationService, key, answer!, logger);
+      var success =
+          sendNotification(atClient.notificationService, key, answer!, logger);
       if (!await success) {
         print(
             '${chalk.brightRed.bold('\r\x1b[KError Sending: ')}"$answer" to ${notification.from} - unable to reach the Internet !');
@@ -280,15 +294,16 @@ class AITalkServer {
     }
   }
 
-  Future<bool> sendNotification(
-      NotificationService notificationService, AtKey key, String input, AtSignLogger logger) async {
+  Future<bool> sendNotification(NotificationService notificationService,
+      AtKey key, String input, AtSignLogger logger) async {
     bool success = false;
 
     // back off retries (max 3)
     for (int retry = 1; retry < 4; retry++) {
       try {
         NotificationResult result = await notificationService.notify(
-            NotificationParams.forUpdate(key, value: input, notificationExpiry: Duration(seconds: 30)),
+            NotificationParams.forUpdate(key,
+                value: input, notificationExpiry: Duration(seconds: 30)),
             waitForFinalDeliveryStatus: false,
             checkForFinalDeliveryStatus: false);
         if (result.atClientException != null) {
